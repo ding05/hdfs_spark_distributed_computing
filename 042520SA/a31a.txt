@@ -1,0 +1,19 @@
+# Check blocks.
+
+hdfs getconf -confKey "dfs.blocksize"
+134217728
+
+hdfs dfs -du /data/ghcnd/daily/2020.csv.gz
+31626590  253012720  /data/ghcnd/daily/2020.csv.gz
+
+hdfs dfs -du /data/ghcnd/daily/2010.csv.gz
+232080599  1856644792  /data/ghcnd/daily/2010.csv.gz
+
+hdfs fsck /data/ghcnd/daily/2020.csv.gz -files -blocks
+/data/ghcnd/daily/2020.csv.gz 31626590 bytes, replicated: replication=8, 1 block(s):  OK
+0. BP-1663138130-132.181.39.102-1551363950352:blk_1073822151_81329 len=31626590 Live_repl=8
+
+hdfs fsck /data/ghcnd/daily/2010.csv.gz -files -blocks
+/data/ghcnd/daily/2010.csv.gz 232080599 bytes, replicated: replication=8, 2 block(s):  OK
+0. BP-1663138130-132.181.39.102-1551363950352:blk_1073822197_81375 len=134217728 Live_repl=8
+1. BP-1663138130-132.181.39.102-1551363950352:blk_1073822198_81376 len=97862871 Live_repl=8

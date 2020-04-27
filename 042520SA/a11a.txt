@@ -1,0 +1,11 @@
+stations_joined_inventory.select("ID").distinct().count()
+
+stations_joined_inventory.groupBy("MAXLASTYEAR").count().sort("MAXLASTYEAR", ascending = False).show()
+
+stations_joined_inventory.groupBy("GSN FLAG").count().show()
+
+stations_joined_inventory.groupBy("HCN/CRN FLAG").count().show()
+
+# Find the stations with at least two flags.
+
+stations_joined_inventory.filter((stations_joined_inventory["GSN FLAG"] == "GSN") & ((stations_joined_inventory["HCN/CRN FLAG"] == "HCN") | (stations_joined_inventory["HCN/CRN FLAG"] == "GRN"))).count()

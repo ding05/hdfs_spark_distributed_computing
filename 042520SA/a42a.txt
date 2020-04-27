@@ -1,0 +1,43 @@
+from pyspark.sql.functions import *
+
+years = []
+
+for i in range(1764, 2021):
+  years.append(i)
+
+daily_1763 = spark.read.load("hdfs:///data/ghcnd/daily/1763.csv.gz", format = "csv", header = "false")
+
+daily_1763_count = daily_1763.filter((daily_1763._c2 == "TMAX") | (daily_1763._c2 == "TMIN") | (daily_1763._c2 == "PRCP") | (daily_1763._c2 == "SNOW") | (daily_1763._c2 == "SNWD")).groupBy(daily_1763._c2).count()
+
+daily_total_count = daily_1763_count.withColumnRenamed("count", "TOTALCOUNT").withColumnRenamed("_c2", "COREELEMENT")
+
+daily_total_count = daily_total_count.union(spark.createDataFrame([("PRCP", 0)])).union(spark.createDataFrame([("SNOW", 0)])).union(spark.createDataFrame([("SNWD", 0)]))
+
+# First write codes based on one table and then use a for-loop on all the tables.
+
+for year in years:
+  filepath = "hdfs:///data/ghcnd/daily/" + str(year) + ".csv.gz"
+  daily_year = spark.read.load(filepath, format = "csv", header = "false")
+  daily_year_filtered = daily_year.filter((daily_year._c2 == "TMAX") | (daily_year._c2 == "TMIN") | (daily_year._c2 == "PRCP") | (daily_year._c2 == "SNOW") | (daily_year._c2 == "SNWD")).groupBy(daily_year._c2).count()
+  daily_total_count = daily_total_count.join(daily_year_filtered.selectExpr("_c2", "count"), daily_total_count.COREELEMENT == daily_year_filtered._c2, how = "left").drop("_c2")
+  # daily_total_count.TOTALCOUNT = daily_total_count.TOTALCOUNT + daily_total_count.count
+  daily_total_count = daily_total_count.na.fill(0)
+  daily_total_count = daily_total_count.withColumnRenamed("TOTALCOUNT", "TEMPCOUNT")
+  daily_total_count = daily_total_count.withColumn("TOTALCOUNT", expr("TEMPCOUNT + count"))
+  daily_total_count = daily_total_count.drop("count").drop("TEMPCOUNT")
+  print("Year " + str(year) + " added")
+
+# daily_total_count.write.format("csv").mode("overwrite").option("header", "true").save("hdfs:///user/username/outputs/ghcnd/Daily Core Elements.csv")
+
+# spark.read.load("hdfs:///user/username/outputs/ghcnd/Daily Core Elements.csv", format = "csv", header = "true").show()
+
+Year 1857 added
++-----------+----------+
+|COREELEMENT|TOTALCOUNT|
++-----------+----------+
+|       TMIN|    133503|
+|       TMAX|    133519|
+|       PRCP|    155420|
+|       SNOW|      5399|
+|       SNWD|         3|
++-----------+----------+

@@ -1,0 +1,59 @@
+stations_parsed = stations_parsed.withColumn("LAUDE", stations_parsed["LAUDE"].cast(DoubleType())).withColumn("LOUDE", stations_parsed["LOUDE"].cast(DoubleType()))
+
+stations_NZ = stations_parsed.filter(stations_parsed["COUNTRYCODE"] == "NZ").select("ID", "NAME", "LAUDE", "LOUDE")
+
+# Refer to https://medium.com/@nikolasbielski/using-a-custom-udf-in-pyspark-to-compute-haversine-distances-d877b77b4b18
+
+from pyspark import SparkContext
+
+from pyspark.sql import SparkSession
+
+from pyspark.sql.types import *
+
+from pyspark.sql import functions as F
+
+from pyspark.sql import DataFrameWriter as W
+
+from math import radians, cos, sin, asin, sqrt
+
+spark = (SparkSession.builder
+                      .appName("HDFS_Haversine_Fun")
+                      .getOrCreate())
+
+# Define a function.
+
+def get_distance(lo_a, la_a, lo_b, la_b):
+
+  # Transform to radians.
+
+  lo_a, la_a, lo_b, la_b = map(radians, [lo_a, la_a, lo_b, la_b])
+
+  dist_lo = lo_b - lo_a
+
+  dist_la = la_b - la_a
+
+  # Calculate the area.
+
+  area = sin(dist_la / 2) ** 2 + cos(la_a) * cos(la_b) * sin(dist_lo / 2) ** 2
+
+  # Calculate the central angle.
+
+  central_angle = 2 * asin(sqrt(area))
+
+  radius = 6371
+
+  # Calculate the distance.
+
+  distance = central_angle * radius
+
+  return abs(round(distance, 2))
+
+# Convert to UDF.
+
+udf_get_distance = F.udf(get_distance)
+
+# Use crossJoin().
+
+stations_NZ_pairs = stations_NZ.crossJoin(stations_NZ).toDF("ID_A", "NAME_A", "LA_A", "LO_A", "ID_B", "NAME_A", "LA_B", "LO_B")
+
+stations_NZ_pairs = stations_NZ_pairs.filter(stations_NZ_pairs.ID_A != stations_NZ_pairs.ID_B)

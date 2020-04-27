@@ -1,0 +1,9 @@
+stations_parsed = stations_parsed.withColumn("LATITUDE", stations_parsed["LATITUDE"].cast(DoubleType()))
+
+stations_parsed.filter(stations_parsed["LATITUDE"] > 0).count()
+
+# By country codes, besides US, AQ, CQ, GQ, JQ, LQ, MQ, RQ, WQ and VQ are also the U.S. territories.
+
+countries_US = countries_joined.filter((countries_joined["CODE"] == "US") | (countries_joined["CODE"] == "AQ") | (countries_joined["CODE"] == "CQ") | (countries_joined["CODE"] == "GQ") | (countries_joined["CODE"] == "JQ") | (countries_joined["CODE"] == "LQ") | (countries_joined["CODE"] == "MQ") | (countries_joined["CODE"] == "RQ") | (countries_joined["CODE"] == "WQ") | (countries_joined["CODE"] == "VQ"))
+
+countries_US.groupBy().sum().collect()

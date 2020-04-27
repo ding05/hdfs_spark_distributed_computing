@@ -1,0 +1,20 @@
+# Read files one by one.
+
+spark.read.load("hdfs:///data/ghcnd/daily/2015.csv.gz", format = "csv", header = "false").count()
+
+spark.read.load("hdfs:///data/ghcnd/daily/2016.csv.gz", format = "csv", header = "false").count()
+
+spark.read.load("hdfs:///data/ghcnd/daily/2017.csv.gz", format = "csv", header = "false").count()
+
+spark.read.load("hdfs:///data/ghcnd/daily/2018.csv.gz", format = "csv", header = "false").count()
+
+spark.read.load("hdfs:///data/ghcnd/daily/2019.csv.gz", format = "csv", header = "false").count()
+
+spark.read.load("hdfs:///data/ghcnd/daily/2020.csv.gz", format = "csv", header = "false").count()
+
+# Read files with regular expressions.
+
+daily_2015_2020 = (
+spark.read.format("com.databricks.spark.csv").option("header", "false")
+.option("inferSchema", "false").load("hdfs:///data/ghcnd/daily/20{15,16,17,18,19,20}.csv.gz")
+)

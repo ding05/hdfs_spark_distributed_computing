@@ -1,0 +1,10 @@
++----+--------------------+-----+
+|CODE|                NAME|COUNT|
++----+--------------------+-----+
+|  AB|             ALBERTA| 1420|
+|  AK|              ALASKA|  986|
+|  AL|ALABAMA          ...|  979|
+|  AR|            ARKANSAS|  864|
+|  AS|      AMERICAN SAMOA|   20|
++----+--------------------+-----+
+only showing top 5 rows

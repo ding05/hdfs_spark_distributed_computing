@@ -1,0 +1,68 @@
+# Read and count.
+
+spark.read.text("hdfs:///data/ghcnd/stations").count()
+
+115081
+
+spark.read.text("hdfs:///data/ghcnd/states").count()
+
+74
+
+spark.read.text("hdfs:///data/ghcnd/countries").count()
+
+219
+
+spark.read.text("hdfs:///data/ghcnd/inventory").count()
+
+687141
+
+stations = spark.read.text("hdfs:///data/ghcnd/stations")
+
+# Parse the texts.
+
+stations_parsed = stations.select(
+    stations.value.substr(1, 11).alias("ID"),
+    stations.value.substr(13, 8).alias("LATITUDE"),
+    stations.value.substr(22, 9).alias("LONGITUDE"),
+    stations.value.substr(32, 6).alias("ELEVATION"),
+    stations.value.substr(39, 2).alias("STATE"),
+    stations.value.substr(42, 30).alias("NAME"),
+    stations.value.substr(73, 3).alias("GSN FLAG"),
+    stations.value.substr(77, 3).alias("HCN/CRN FLAG"),
+    stations.value.substr(81, 5).alias("WMO ID"))
+
+stations_parsed.show()
+
++-----------+--------+---------+---------+-----+------------------------------+--------+------------+------+
+|ID         |LATITUDE|LONGITUDE|ELEVATION|STATE|NAME                          |GSN FLAG|HCN/CRN FLAG|WMO ID|
++-----------+--------+---------+---------+-----+------------------------------+--------+------------+------+
+|ACW00011604| 17.1167| -61.7833|  10.1   |     |ST JOHNS COOLIDGE FLD         |        |            |      |
+|ACW00011647| 17.1333| -61.7833|  19.2   |     |ST JOHNS                      |        |            |      |
+|AE000041196| 25.3330|  55.5170|  34.0   |     |SHARJAH INTER. AIRP           |GSN     |            |41196 |
+|AEM00041194| 25.2550|  55.3640|  10.4   |     |DUBAI INTL                    |        |            |41194 |
+|AEM00041217| 24.4330|  54.6510|  26.8   |     |ABU DHABI INTL                |        |            |41217 |
+|AEM00041218| 24.2620|  55.6090| 264.9   |     |AL AIN INTL                   |        |            |41218 |
+|AF000040930| 35.3170|  69.0170|3366.0   |     |NORTH-SALANG                  |GSN     |            |40930 |
+|AFM00040938| 34.2100|  62.2280| 977.2   |     |HERAT                         |        |            |40938 |
+|AFM00040948| 34.5660|  69.2120|1791.3   |     |KABUL INTL                    |        |            |40948 |
+|AFM00040990| 31.5000|  65.8500|1010.0   |     |KANDAHAR AIRPORT              |        |            |40990 |
+|AG000060390| 36.7167|   3.2500|  24.0   |     |ALGER-DAR EL BEIDA            |GSN     |            |60390 |
+|AG000060590| 30.5667|   2.8667| 397.0   |     |EL-GOLEA                      |GSN     |            |60590 |
+|AG000060611| 28.0500|   9.6331| 561.0   |     |IN-AMENAS                     |GSN     |            |60611 |
+|AG000060680| 22.8000|   5.4331|1362.0   |     |TAMANRASSET                   |GSN     |            |60680 |
+|AGE00135039| 35.7297|   0.6500|  50.0   |     |ORAN-HOPITAL MILITAIRE        |        |            |      |
+|AGE00147704| 36.9700|   7.7900| 161.0   |     |ANNABA-CAP DE GARDE           |        |            |      |
+|AGE00147705| 36.7800|   3.0700|  59.0   |     |ALGIERS-VILLE/UNIVERSITE      |        |            |      |
+|AGE00147706| 36.8000|   3.0300| 344.0   |     |ALGIERS-BOUZAREAH             |        |            |      |
+|AGE00147707| 36.8000|   3.0400|  38.0   |     |ALGIERS-CAP CAXINE            |        |            |      |
+|AGE00147708| 36.7200|   4.0500| 222.0   |     |TIZI OUZOU                    |        |            |60395 |
++-----------+--------+---------+---------+-----+------------------------------+--------+------------+------+
+only showing top 20 rows
+
+from pyspark.sql.functions import trim
+
+stations_parsed_nonempty = stations_parsed.select(trim(col("WMO ID")))
+
+stations_parsed_nonempty.filter((stations_parsed_nonempty["trim(WMO ID)"] == "") | stations_parsed_nonempty["trim(WMO ID)"].isNull() | isnan(stations_parsed_nonempty["trim(WMO ID)"])).count()
+
+106993

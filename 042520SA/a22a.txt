@@ -1,0 +1,11 @@
+# Call the UDF.
+
+stations_NZ_distances = stations_NZ_pairs.withColumn("DISTANCE", udf_get_distance(stations_NZ_pairs.LO_A, stations_NZ_pairs.LA_A, stations_NZ_pairs.LO_B, stations_NZ_pairs.LA_B))
+
+stations_NZ_distances = stations_NZ_distances.withColumn("DISTANCE", stations_NZ_distances["DISTANCE"].cast(DoubleType()))
+
+stations_NZ_distances = stations_NZ_distances.select("ID_A", "NAME_A", "ID_B", "NAME_B", "DISTANCE").sort("DISTANCE", ascending = False)
+
+states_joined.write.format("csv").mode("overwrite").option("header", "true").save("hdfs:///user/username/outputs/ghcnd/Stations NZ Distances.csv.gz")
+
+stations_NZ_distances.show(5)

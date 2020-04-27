@@ -1,0 +1,42 @@
+# HDFS commands and ouputs
+
+# Get the information of files and directories.
+
+[username@canterbury.ac.nz@mathmadslinux1p ~]$ hdfs dfs -ls /data/ghcnd/
+Found 5 items
+-rwxr-xr-x   8 username username       3659 2020-03-10 08:29 /data/ghcnd/countries
+drwxr-xr-x   - username username          0 2020-03-10 12:24 /data/ghcnd/daily
+-rwxr-xr-x   8 username username   31608486 2020-03-10 08:29 /data/ghcnd/inventory
+-rwxr-xr-x   8 username username       1086 2020-03-10 08:28 /data/ghcnd/states
+-rwxr-xr-x   8 username username    9896966 2020-03-10 08:28 /data/ghcnd/stations
+
+[username@canterbury.ac.nz@mathmadslinux1p ~]$ hdfs dfs -ls /data/ghcnd/countries
+-rwxr-xr-x   8 username username       3659 2020-03-10 08:29 /data/ghcnd/countries
+
+[username@canterbury.ac.nz@mathmadslinux1p ~]$ hdfs dfs -ls /data/ghcnd/daily/
+Found 258 items
+-rw-r--r--   8 username username       3358 2020-03-10 11:58 /data/ghcnd/daily/1763.csv.gz
+-rw-r--r--   8 username username       3327 2020-03-10 11:58 /data/ghcnd/daily/1764.csv.gz
+-rw-r--r--   8 username username       3335 2020-03-10 11:58 /data/ghcnd/daily/1765.csv.gz
+-rw-r--r--   8 username username       3344 2020-03-10 11:58 /data/ghcnd/daily/1766.csv.gz
+-rw-r--r--   8 username username       3356 2020-03-10 11:58 /data/ghcnd/daily/1767.csv.gz
+......
+-rwxr-xr-x   8 username username   31626590 2020-03-10 08:23 /data/ghcnd/daily/2020.csv.gz
+
+[username@canterbury.ac.nz@mathmadslinux1p ~]$ hdfs dfs -ls /data/ghcnd/inventory
+-rwxr-xr-x   8 username username   31608486 2020-03-10 08:29 /data/ghcnd/inventory
+
+[username@canterbury.ac.nz@mathmadslinux1p ~]$ hdfs dfs -ls /data/ghcnd/states
+-rwxr-xr-x   8 username username       1086 2020-03-10 08:28 /data/ghcnd/states
+
+[username@canterbury.ac.nz@mathmadslinux1p ~]$ hdfs dfs -ls /data/ghcnd/stations
+-rwxr-xr-x   8 username username    9896966 2020-03-10 08:28 /data/ghcnd/stations
+
+[username@canterbury.ac.nz@mathmadslinux1p ~]$ hdfs dfs -du /data/ghcnd/
+3659         29272         /data/ghcnd/countries
+16639100391  133112803128  /data/ghcnd/daily
+31608486     252867888     /data/ghcnd/inventory
+1086         8688          /data/ghcnd/states
+9896966      79175728      /data/ghcnd/stations
+
+[username@canterbury.ac.nz@mathmadslinux1p ~]$ hdfs dfs -du /data/ghcnd/daily/

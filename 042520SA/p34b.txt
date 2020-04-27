@@ -1,0 +1,33 @@
+from pyspark.sql.types import DoubleType
+
+# Convert the column types.
+
+inventory_parsed = inventory_parsed.withColumn("FIRSTYEAR", inventory_parsed["FIRSTYEAR"].cast(DoubleType()))
+
+inventory_parsed = inventory_parsed.withColumn("LASTYEAR", inventory_parsed["LASTYEAR"].cast(DoubleType()))
+
+inventory_parsed.groupBy("ID").min("FIRSTYEAR").show()
+
+inventory_parsed.groupBy("ID").max("LASTYEAR").show()
+
+import pyspark.sql.functions as func
+
+# Group and aggregate.
+
+inventory_parsed.groupBy(inventory_parsed.ID).agg(func.countDistinct('ELEMENT')).sort("ID").show()
+
+inventory_parsed.filter((inventory_parsed.ELEMENT == "TMAX") | (inventory_parsed.ELEMENT == "TMIN") | (inventory_parsed.ELEMENT == "PRCP") | (inventory_parsed.ELEMENT == "SNOW") | (inventory_parsed.ELEMENT == "SNWD")).groupby(inventory_parsed.ID).count().sort("ID").show()
+
+inventory_parsed.filter((inventory_parsed.ELEMENT != "TMAX") & (inventory_parsed.ELEMENT != "TMIN") & (inventory_parsed.ELEMENT != "PRCP") & (inventory_parsed.ELEMENT != "SNOW") & (inventory_parsed.ELEMENT != "SNWD")).groupby(inventory_parsed.ID).count().sort("ID").show()
+
+inventory_core = inventory_parsed.filter((inventory_parsed.ELEMENT == "TMAX") | (inventory_parsed.ELEMENT == "TMIN") | (inventory_parsed.ELEMENT == "PRCP") | (inventory_parsed.ELEMENT == "SNOW") | (inventory_parsed.ELEMENT == "SNWD")).groupby(inventory_parsed.ID).count().sort("ID")
+
+inventory_core = inventory_core.withColumn("count", inventory_core["count"].cast(DoubleType()))
+
+inventory_core.filter(inventory_core["count"] == 5).count()
+
+inventory_parsed.filter((inventory_parsed.ELEMENT == "TMAX") | (inventory_parsed.ELEMENT == "TMIN")).groupby(inventory_parsed.ID).count().count()
+
+inventory_parsed.filter((inventory_parsed.ELEMENT == "TMAX")).groupby(inventory_parsed.ID).count().count()
+
+inventory_parsed.filter((inventory_parsed.ELEMENT == "TMIN")).groupby(inventory_parsed.ID).count().count()

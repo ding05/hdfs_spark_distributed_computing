@@ -1,0 +1,4 @@
+drwxr-xr-x   - username username          0 2020-04-16 01:08 hdfs:///user/username/outputs/ghcnd/Countries.csv.gz
+drwxr-xr-x   - username username          0 2020-04-16 01:08 hdfs:///user/username/outputs/ghcnd/States.csv.gz
+drwxr-xr-x   - username username          0 2020-04-16 01:15 hdfs:///user/username/outputs/ghcnd/Stations NZ Distances.csv.gz
+drwxr-xr-x   - username username          0 2020-04-15 15:18 hdfs:///user/username/outputs/ghcnd/Stations.csv.gz

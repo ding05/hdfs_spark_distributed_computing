@@ -1,0 +1,10 @@
++-----------+------------------------------+-----------+------------------------------+--------+
+|ID_A       |NAME_A                        |ID_B       |NAME_B                        |DISTANCE|
++-----------+------------------------------+-----------+------------------------------+--------+
+|NZ000939450|CAMPBELL ISLAND AWS           |NZ000093994|RAOUL ISL/KERMADEC            |2799.18 |
+|NZ000093994|RAOUL ISL/KERMADEC            |NZ000939450|CAMPBELL ISLAND AWS           |2799.18 |
+|NZ000093994|RAOUL ISL/KERMADEC            |NZM00093929|ENDERBY ISLAND AWS            |2705.42 |
+|NZM00093929|ENDERBY ISLAND AWS            |NZ000093994|RAOUL ISL/KERMADEC            |2705.42 |
+|NZ000093844|INVERCARGILL AIRPOR           |NZ000093994|RAOUL ISL/KERMADEC            |2251.34 |
++-----------+------------------------------+-----------+------------------------------+--------+
+only showing top 5 rows

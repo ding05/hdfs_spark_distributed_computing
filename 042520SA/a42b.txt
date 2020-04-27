@@ -1,0 +1,82 @@
+from pyspark.sql.functions import *
+
+years = []
+
+for i in range(1764, 2021):
+  years.append(i)
+
+daily_1763 = spark.read.load("hdfs:///data/ghcnd/daily/1763.csv.gz", format = "csv", header = "false")
+
+daily_1763_count = daily_1763.filter((daily_1763._c2 == "TMAX") | (daily_1763._c2 == "TMIN") | (daily_1763._c2 == "PRCP") | (daily_1763._c2 == "SNOW") | (daily_1763._c2 == "SNWD")).groupBy(daily_1763._c2).count()
+
+daily_1763_count = daily_1763_count.withColumnRenamed("count", "TEMPCOUNT").withColumnRenamed("_c2", "COREELEMENT")
+
+daily_1763_count = daily_1763_count.union(spark.createDataFrame([("PRCP", 0)])).union(spark.createDataFrame([("SNOW", 0)])).union(spark.createDataFrame([("SNWD", 0)]))
+
+values = [row["TEMPCOUNT"] for row in daily_1763_count.collect()]
+
+elements = [[1763] + values]
+
+for year in years:
+  filepath = "hdfs:///data/ghcnd/daily/" + str(year) + ".csv.gz"
+  daily_year = spark.read.load(filepath, format = "csv", header = "false")
+  daily_year_filtered = daily_year.filter((daily_year._c2 == "TMAX") | (daily_year._c2 == "TMIN") | (daily_year._c2 == "PRCP") | (daily_year._c2 == "SNOW") | (daily_year._c2 == "SNWD")).groupBy(daily_year._c2).count()
+  daily_temp_count = daily_1763_count.join(daily_year_filtered.selectExpr("_c2", "count"), daily_1763_count.COREELEMENT == daily_year_filtered._c2, how = "left").drop("_c2")
+  daily_temp_count = daily_temp_count.na.fill(0)
+  daily_temp_count = daily_temp_count.drop("TEMPCOUNT")
+  # values =  daily_temp_count.select("count").collect()
+  values = [row["count"] for row in daily_temp_count.collect()]
+  elements.append([year] + values)
+  print("Year " + str(year) + " appended")
+
+daily_years_elements = spark.createDataFrame(elements)
+
+daily_years_elements = daily_years_elements.withColumnRenamed("_1", "YEAR").withColumnRenamed("_2", "TMAX").withColumnRenamed("_3", "TMIN").withColumnRenamed("_4", "PRCP").withColumnRenamed("_5", "SNOW").withColumnRenamed("_6", "SNWD").sort("YEAR")
+
+daily_years_elements.write.format("csv").mode("overwrite").option("header", "true").save("hdfs:///user/username/outputs/ghcnd/Daily Core Element Counts.csv")
+
+spark.read.load("hdfs:///user/username/outputs/ghcnd/Daily Core Element Counts.csv", format = "csv", header = "true").sort("YEAR").show()
+
+daily_years_elements.sort("YEAR", ascending = False).show(5)
+
++----+-------+-------+--------+-------+-------+
+|YEAR|   TMAX|   TMIN|    PRCP|   SNOW|   SNWD|
++----+-------+-------+--------+-------+-------+
+|2020| 670977| 666034| 1472827| 653443| 501126|
+|2019|4186327|3105156|10315523|4391646|4350856|
+|2018|4270434|3198127|10411480|4462273|4438780|
+|2017|4314402|3167327|10353130|4555275|4535041|
+|2016|4337241|3153438|10432962|4665557|4678205|
++----+-------+-------+--------+-------+-------+
+only showing top 5 rows
+
+daily_years_elements.groupBy().sum().drop("sum(YEAR)").show()
+
++---------+---------+----------+---------+---------+
+|sum(TMAX)|sum(TMIN)| sum(PRCP)|sum(SNOW)|sum(SNWD)|
++---------+---------+----------+---------+---------+
+|341054539|300451082|1021682210|426672242|419830435|
++---------+---------+----------+---------+---------+
+
+inventory = spark.read.text("hdfs:///data/ghcnd/inventory")
+
+inventory_parsed = inventory.select(
+    inventory.value.substr(1, 11).alias("ID"),
+    inventory.value.substr(13, 8).alias("LATITUDE"),
+    inventory.value.substr(22, 9).alias("LONGITUDE"),
+    inventory.value.substr(32, 4).alias("ELEMENT"),
+    inventory.value.substr(37, 4).alias("FIRSTYEAR"),
+    inventory.value.substr(42, 4).alias("LASTYEAR"))
+
+inventory_parsed.groupBy("ELEMENT").count().sort("count", ascending = False).show(5)
+
++-------+------+
+|ELEMENT| count|
++-------+------+
+|   PRCP|113070|
+|   SNOW| 66536|
+|   MDPR| 60775|
+|   SNWD| 58844|
+|   DAPR| 53484|
++-------+------+
+only showing top 5 rows

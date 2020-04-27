@@ -1,0 +1,10 @@
++-----------+
+|COUNTRYCODE|
++-----------+
+|         AC|
+|         AC|
+|         AE|
+|         AE|
+|         AE|
++-----------+
+only showing top 5 rows

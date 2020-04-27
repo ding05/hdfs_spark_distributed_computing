@@ -1,0 +1,31 @@
+# Read and show a table.
+
+daily_2020_1000 = spark.read.load("hdfs:///data/ghcnd/daily/2020.csv.gz", format = "csv", header = "false", limit = 1000)
+
+daily_2020_1000.show()
+
++-----------+--------+----+---+----+----+---+----+
+|        _c0|     _c1| _c2|_c3| _c4| _c5|_c6| _c7|
++-----------+--------+----+---+----+----+---+----+
+|US1FLSL0019|20200101|PRCP|  0|null|null|  N|null|
+|US1FLSL0019|20200101|SNOW|  0|null|null|  N|null|
+|US1NVNY0012|20200101|PRCP|  0|null|null|  N|null|
+|US1NVNY0012|20200101|SNOW|  0|null|null|  N|null|
+|US1ILWM0012|20200101|PRCP|  0|null|null|  N|null|
+|USS0018D08S|20200101|TMAX| 46|null|null|  T|null|
+|USS0018D08S|20200101|TMIN|  6|null|null|  T|null|
+|USS0018D08S|20200101|TOBS|  6|null|null|  T|null|
+|USS0018D08S|20200101|PRCP| 76|null|null|  T|null|
+|USS0018D08S|20200101|SNWD|  0|null|null|  T|null|
+|USS0018D08S|20200101|TAVG| 23|null|null|  T|null|
+|USS0018D08S|20200101|WESD|127|null|null|  T|null|
+|USC00141761|20200101|TMAX| 39|null|null|  7|0700|
+|USC00141761|20200101|TMIN|-50|null|null|  7|0700|
+|USC00141761|20200101|TOBS|-17|null|null|  7|0700|
+|USC00141761|20200101|PRCP|  0|null|null|  7|0700|
+|USC00141761|20200101|SNOW|  0|null|null|  7|null|
+|USC00141761|20200101|SNWD|  0|null|null|  7|0700|
+|USC00141761|20200101|WESD|  0|null|null|  7|null|
+|RQC00660061|20200101|TMAX|289|null|null|  7|0800|
++-----------+--------+----+---+----+----+---+----+
+only showing top 20 rows

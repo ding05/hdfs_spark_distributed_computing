@@ -1,0 +1,44 @@
+# spark.read.load("hdfs:///data/ghcnd/daily/2015.csv.gz", format = "csv", header = "false").count()
+
+years = []
+
+for i in range(1763, 2021):
+  years.append(i)
+
+rows = []
+
+for year in years:
+  filepath = "hdfs:///data/ghcnd/daily/" + str(year) + ".csv.gz"
+  rows.append([year, spark.read.load(filepath, format = "csv", header = "false").count()])
+  print("Year " + str(year) + " appended")
+
+daily_years_rows = spark.createDataFrame(rows)
+
+daily_years_rows = daily_years_rows.withColumnRenamed("_1", "YEAR").withColumnRenamed("_2", "ROWCOUNT").sort("YEAR")
+
+# daily_years_rows.show()
+
+daily_years_rows.write.format("csv").mode("overwrite").option("header", "true").save("hdfs:///user/username/outputs/ghcnd/Daily Years Rows.csv")
+
+spark.read.load("hdfs:///user/username/outputs/ghcnd/Daily Years Rows.csv", format = "csv", header = "true").sort("YEAR").show()
+
+daily_years_rows.show(5)
+
++----+--------+
+|YEAR|ROWCOUNT|
++----+--------+
+|1763|     730|
+|1764|     732|
+|1765|     730|
+|1766|     730|
+|1767|     730|
++----+--------+
+only showing top 5 rows
+
+daily_years_rows.groupBy().sum().drop("sum(YEAR)").show()
+
++-------------+
+|sum(ROWCOUNT)|
++-------------+
+|   2928664523|
++-------------+

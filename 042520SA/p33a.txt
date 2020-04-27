@@ -1,0 +1,7 @@
+# Left join two tables.
+
+stations_joined = stations_joined.join(states_parsed.selectExpr("CODE", "NAME as STATENAME"), stations_joined.STATE == states_parsed.CODE, how = "left")
+
+# Drop an unncessary column.
+
+stations_joined = stations_joined.drop("CODE")

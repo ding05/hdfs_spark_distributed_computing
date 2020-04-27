@@ -1,0 +1,41 @@
+qualityflags = []
+
+for year in range(2016, 2021):
+  filepath = "hdfs:///data/ghcnd/daily/" + str(year) + ".csv.gz"
+  daily_year = spark.read.load(filepath, format = "csv", header = "false")
+  a = daily_year.filter(daily_year._c5.isNull()).count()
+  b = daily_year.count()
+  c = a / b
+  qualityflags.append([year, a, b, c])
+
+qualityflags
+
+# Each item is [year, # of passing flags, # of the total, rate of passing].
+
+qualityflags = [[2016, 35284202, 35326496, 0.9988027683243761],
+ [2017, 34813019, 34854073, 0.9988221175757565],
+ [2018, 34549236, 34589423, 0.9988381708477763],
+ [2019, 34000911, 34034530, 0.9990122090711991],
+ [2020, 5208332, 5215365, 0.9986514846036663]]
+
+qualityflags = [[2016, 42294, 35326496, 0.00119723167],
+ [2017, 41054, 34854073, 0.00117788242],
+ [2018, 40187, 34589423, 0.00116182915],
+ [2019, 33619, 34034530, 0.00098779092],
+ [2020, 7033, 5215365, 0.00134851539]]
+
+daily_years_qualityflags = spark.createDataFrame(qualityflags)
+
+daily_years_qualityflags = daily_years_qualityflags.withColumnRenamed("_1", "YEAR").withColumnRenamed("_2", "count(FAILURE)").withColumnRenamed("_3", "count(OBSERVATION)").withColumnRenamed("_4", "ratio(FAILURE)")
+
+daily_years_qualityflags.sort("YEAR", ascending = False).show()
+
++----+--------------+------------------+--------------+
+|YEAR|count(FAILURE)|count(OBSERVATION)|ratio(FAILURE)|
++----+--------------+------------------+--------------+
+|2020|          7033|           5215365| 0.00134851539|
+|2019|         33619|          34034530| 0.00098779092|
+|2018|         40187|          34589423| 0.00116182915|
+|2017|         41054|          34854073| 0.00117788242|
+|2016|         42294|          35326496| 0.00119723167|
++----+--------------+------------------+--------------+

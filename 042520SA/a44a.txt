@@ -1,0 +1,114 @@
+stations_joined = spark.read.load("hdfs:///user/username/outputs/ghcnd/Stations.csv.gz", format = "csv", header = "true")
+
+stations_NZ = stations_joined.filter(stations_joined.COUNTRYCODE == "NZ").withColumnRenamed("ID", "NZID")
+
+inventory_NZ = inventory_parsed.join(stations_NZ.selectExpr("NZID"), stations_NZ.NZID == inventory_parsed.ID, how = "left")
+
+inventory_NZ = inventory_NZ.filter(inventory_NZ.NZID.isNotNull())
+
+inventory_NZ_TMAX = inventory_NZ.filter(inventory_NZ.ELEMENT == "TMAX").drop("NZID").drop("LATTITUDE").drop("LONGITUDE")
+
+inventory_NZ_TMIN = inventory_NZ.filter(inventory_NZ.ELEMENT == "TMIN").drop("NZID").drop("LATTITUDE").drop("LONGITUDE")
+
+IDs = [row["ID"] for row in inventory_NZ_TMAX.collect()]
+TMAX_starts = [row["FIRSTYEAR"] for row in inventory_NZ_TMAX.collect()]
+TMAX_ends = [row["LASTYEAR"] for row in inventory_NZ_TMAX.collect()]
+TMIN_starts = [row["FIRSTYEAR"] for row in inventory_NZ_TMIN.collect()]
+TMIN_ends = [row["LASTYEAR"] for row in inventory_NZ_TMIN.collect()]
+
+from pyspark.sql import Row, DataFrame, functions as F
+
+from pyspark.sql.types import *
+
+# Create tables for TMAX and TMIN of 15 stations.
+
+# IDs = ["NZ000093292"]
+# TMAX_starts = ["2017"]
+# TMAX_ends = ["2018"]
+# TMIN_starts = ["2017"]
+# TMIN_ends = ["2018"]
+
+for i in range(0, len(IDs)):
+  id = IDs[i]
+  starts = TMAX_starts[i]
+  ends = TMAX_ends[i]
+  schema = StructType([
+    StructField("ID", StringType(), True),
+    StructField("DATE", StringType(), True),
+    StructField("ELEMENT", StringType(), True),
+    StructField("VALUE", StringType(), True)
+  ])
+  daily_temp = sqlContext.createDataFrame([], schema)
+  for year in range(int(starts), int(ends) + 1):
+    filepath = "hdfs:///data/ghcnd/daily/" + str(year) + ".csv.gz"
+    daily_year = spark.read.load(filepath, format = "csv", header = "false")
+    print(filepath + " loaded")
+    daily_year = daily_year.filter(daily_year._c0 == id).filter(daily_year._c2 == "TMAX").select("_c0", "_c1", "_c2", "_c3")
+    daily_temp = daily_temp.union(daily_year)
+  daily_temp.write.format("csv").mode("overwrite").option("header", "true").save("hdfs:///user/username/outputs/ghcnd/temperature/" + IDs[i] + " TMAX.csv")
+  print("hdfs:///user/username/outputs/ghcnd/temperature/" + IDs[i] + " TMAX.csv saved")
+
+for i in range(0, len(IDs)):
+  id = IDs[i]
+  starts = TMIN_starts[i]
+  ends = TMIN_ends[i]
+  schema = StructType([
+    StructField("ID", StringType(), True),
+    StructField("DATE", StringType(), True),
+    StructField("ELEMENT", StringType(), True),
+    StructField("VALUE", StringType(), True)
+  ])
+  daily_temp = sqlContext.createDataFrame([], schema)
+  for year in range(int(starts), int(ends) + 1):
+    filepath = "hdfs:///data/ghcnd/daily/" + str(year) + ".csv.gz"
+    daily_year = spark.read.load(filepath, format = "csv", header = "false")
+    print(filepath + " loaded")
+    daily_year = daily_year.filter(daily_year._c0 == id).filter(daily_year._c2 == "TMIN").select("_c0", "_c1", "_c2", "_c3")
+    daily_temp = daily_temp.union(daily_year)
+  daily_temp.write.format("csv").mode("overwrite").option("header", "true").save("hdfs:///user/username/outputs/ghcnd/temperature/" + IDs[i] + " TMIN.csv")
+  print("hdfs:///user/username/outputs/ghcnd/temperature/" + IDs[i] + " TMIN.csv saved")
+
+# Compute the average.
+
+from pyspark.sql.functions import col
+
+for id in IDs:
+  daily_tmax = spark.read.load("hdfs:///user/username/outputs/ghcnd/temperature/" + id + " TMAX.csv", format = "csv", header = "true")
+  daily_tmin = spark.read.load("hdfs:///user/username/outputs/ghcnd/temperature/" + id + " TMIN.csv", format = "csv", header = "true")
+  daily_tmax = daily_tmax.withColumnRenamed("DATE", "TMAXDATE").withColumnRenamed("VALUE", "TMAXVALUE").drop("ID").drop("ELEMENT")
+  daily_tmin = daily_tmin.withColumnRenamed("DATE", "TMINDATE").withColumnRenamed("VALUE", "TMINVALUE").drop("ID").drop("ELEMENT")
+  daily_average = daily_tmax.join(daily_tmin.selectExpr("TMINDATE", "TMINVALUE"), daily_tmax.TMAXDATE == daily_tmin.TMINDATE, how = "left")
+  # daily_average = daily_average.filter("TMINVALUE".isNotNull()).filter("TMAXVALUE".isNotNull())
+  daily_average = daily_average.withColumn("TMAXVALUE", daily_average["TMAXVALUE"].cast(DoubleType())).withColumn("TMINVALUE", daily_average["TMINVALUE"].cast(DoubleType()))
+  tempColumns = [col("TMAXVALUE"), col("TMINVALUE")]
+  averageFunc = sum(x for x in tempColumns) / len(tempColumns)
+  daily_average = daily_average.withColumn("TAVGVALUE", averageFunc)
+  daily_temp.write.format("csv").mode("overwrite").option("header", "true").save("hdfs:///user/username/outputs/ghcnd/temperature/" + id + " TAVG.csv")
+  print("hdfs:///user/username/outputs/ghcnd/temperature/" + id + " TAVG.csv saved")
+
+counts = 0
+
+for id in IDs:
+  daily_tmax = spark.read.load("hdfs:///user/username/outputs/ghcnd/temperature/" + id + " TMAX.csv", format = "csv", header = "true")
+  daily_tmin = spark.read.load("hdfs:///user/username/outputs/ghcnd/temperature/" + id + " TMIN.csv", format = "csv", header = "true")
+  counts += daily_tmax.count() + daily_tmin.count()
+
+counts
+
+458891
+
+[username@canterbury.ac.nz@mathmadslinux1p ~]$ hdfs dfs -copyToLocal /user/username/outputs/ghcnd/temperature/test.csv /users/home/username/temperature/
+
+[username@canterbury.ac.nz@mathmadslinux1p ~]$ hdfs dfs -copyToLocal /user/username/outputs/ghcnd/temp/ /users/home/username/
+
+for id in IDs:
+  daily_tmax = spark.read.load("hdfs:///user/username/outputs/ghcnd/temperature/" + id + " TMAX.csv", format = "csv", header = "true")
+  daily_tmax.write.format("csv").mode("overwrite").option("header", "true").save("hdfs:///user/username/outputs/ghcnd/temp/" + id + " TMAX.csv.gz")
+
+for id in IDs:
+  daily_tmin = spark.read.load("hdfs:///user/username/outputs/ghcnd/temperature/" + id + " TMIN.csv", format = "csv", header = "true")
+  daily_tavg = spark.read.load("hdfs:///user/username/outputs/ghcnd/temperature/" + id + " TAVG.csv", format = "csv", header = "true")
+  daily_tmin.write.format("csv").mode("overwrite").option("header", "true").save("hdfs:///user/username/outputs/ghcnd/temp/" + id + " TMIN.csv.gz")
+  daily_tavg.write.format("csv").mode("overwrite").option("header", "true").save("hdfs:///user/username/outputs/ghcnd/temp/" + id + " TAVG.csv.gz")
+
+[username@canterbury.ac.nz@mathmadslinux1p ~]$ hdfs dfs -rm -r /user/username/outputs/ghcnd/temperature/

@@ -1,0 +1,2 @@
+/data/ghcnd/daily/2020.csv.gz 31626590 bytes, replicated: replication=8, 1 block(s):  OK
+0. BP-1663138130-132.181.39.102-1551363950352:blk_1073822151_81329 len=31626590 Live_repl=8

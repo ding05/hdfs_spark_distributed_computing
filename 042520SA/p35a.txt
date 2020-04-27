@@ -1,0 +1,47 @@
+inventory_minFirstyear = inventory_parsed.groupBy("ID").min("FIRSTYEAR")
+
+# Rename a column.
+
+inventory_minFirstyear = inventory_minFirstyear.withColumnRenamed("min(FIRSTYEAR)", "MINFIRSTYEAR")
+
+from pyspark.sql.types import IntegerType
+
+inventory_minFirstyear = inventory_minFirstyear.withColumn("MINFIRSTYEAR", inventory_minFirstyear["MINFIRSTYEAR"].cast(IntegerType()))
+
+stations_joined_inventory = stations_joined.join(inventory_minFirstyear.selectExpr("ID", "MINFIRSTYEAR"), stations_joined.ID == inventory_minFirstyear.ID, how = "left").drop(inventory_minFirstyear.ID)
+
+inventory_maxLastyear = inventory_parsed.groupBy("ID").max("LASTYEAR")
+
+inventory_maxLastyear = inventory_maxLastyear.withColumnRenamed("max(LASTYEAR)", "MAXLASTYEAR")
+
+inventory_maxLastyear = inventory_maxLastyear.withColumn("MAXLASTYEAR", inventory_maxLastyear["MAXLASTYEAR"].cast(IntegerType()))
+
+stations_joined_inventory = stations_joined_inventory.join(inventory_maxLastyear.selectExpr("ID", "MAXLASTYEAR"), stations_joined_inventory.ID == inventory_maxLastyear.ID, how = "left").drop(inventory_maxLastyear.ID)
+
+inventory_distinctElement = inventory_parsed.groupBy(inventory_parsed.ID).agg(func.countDistinct('ELEMENT'))
+
+inventory_distinctElement = inventory_distinctElement.withColumnRenamed("count(DISTINCT ELEMENT)", "COUNTDISTINCTELEMENT")
+
+inventory_distinctElement = inventory_distinctElement.withColumn("COUNTDISTINCTELEMENT", inventory_distinctElement["COUNTDISTINCTELEMENT"].cast(IntegerType()))
+
+stations_joined_inventory = stations_joined_inventory.join(inventory_distinctElement.selectExpr("ID", "COUNTDISTINCTELEMENT"), stations_joined_inventory.ID == inventory_distinctElement.ID, how = "left").drop(inventory_distinctElement.ID)
+
+inventory_coreElement = inventory_parsed.filter((inventory_parsed.ELEMENT == "TMAX") | (inventory_parsed.ELEMENT == "TMIN") | (inventory_parsed.ELEMENT == "PRCP")  | (inventory_parsed.ELEMENT == "SNOW")  | (inventory_parsed.ELEMENT == "SNWD")).groupby(inventory_parsed.ID).count()
+
+inventory_coreElement = inventory_coreElement.withColumnRenamed("count", "COUNTCOREELEMENT")
+
+inventory_coreElement = inventory_coreElement.withColumn("COUNTCOREELEMENT", inventory_coreElement["COUNTCOREELEMENT"].cast(IntegerType()))
+
+stations_joined_inventory = stations_joined_inventory.join(inventory_coreElement.selectExpr("ID", "COUNTCOREELEMENT"), stations_joined_inventory.ID == inventory_coreElement.ID, how = "left").drop(inventory_coreElement.ID)
+
+inventory_nonCoreElement = inventory_parsed.filter((inventory_parsed.ELEMENT != "TMAX") & (inventory_parsed.ELEMENT != "TMIN") & (inventory_parsed.ELEMENT != "PRCP") & (inventory_parsed.ELEMENT != "SNOW") & (inventory_parsed.ELEMENT != "SNWD")).groupby(inventory_parsed.ID).count()
+
+inventory_nonCoreElement = inventory_nonCoreElement.withColumnRenamed("count", "COUNTNONCOREELEMENT")
+
+inventory_nonCoreElement = inventory_nonCoreElement.withColumn("COUNTNONCOREELEMENT", inventory_nonCoreElement["COUNTNONCOREELEMENT"].cast(IntegerType()))
+
+stations_joined_inventory = stations_joined_inventory.join(inventory_nonCoreElement.selectExpr("ID", "COUNTNONCOREELEMENT"), stations_joined_inventory.ID == inventory_nonCoreElement.ID, how = "left").drop(inventory_nonCoreElement.ID)
+
+stations_joined_inventory.write.format("csv").mode("overwrite").option("header", "true").save("hdfs:///user/username/outputs/ghcnd/Stations.csv.gz")
+
+spark.read.format("csv").option("header", "true").load("hdfs:///user/username/outputs/ghcnd/Stations.csv").show()

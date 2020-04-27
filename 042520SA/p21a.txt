@@ -1,0 +1,47 @@
+from pyspark.sql import Row, DataFrame, functions as F
+
+from pyspark.sql.types import *
+
+# Define schemas for each metadata table.
+
+daily = StructType([
+  StructField("ID", StringType(), True),
+  StructField("DATE", DateType(), True),
+  StructField("ELEMENT", StringType(), True),
+  StructField("VALUE", DoubleType(), True),
+  StructField("MEASUREMENT FLAG", StringType(), True),
+  StructField("QUALITY FLAG", StringType(), True),
+  StructField("SOURCE FLAG", StringType(), True),
+  StructField("OBSERVATION TIME", DateType(), True)
+])
+
+stations = StructType([
+  StructField("ID", StringType(), True),
+  StructField("LATITUDE", DoubleType(), True),
+  StructField("LONGITUDE", DoubleType(), True),
+  StructField("ELEVATION", DoubleType(), True),
+  StructField("STATE", StringType(), True),
+  StructField("NAME", StringType(), True),
+  StructField("GSN FLAG", StringType(), True),
+  StructField("HCN/CRN FLAG", StringType(), True),
+  StructField("WMO ID", StringType(), True)
+])
+
+states = StructType([
+  StructField("CODE", StringType(), True),
+  StructField("NAME", StringType(), True)
+])
+
+countries = StructType([
+  StructField("CODE", StringType(), True),
+  StructField("NAME", StringType(), True)
+])
+
+inventory = StructType([
+  StructField("ID", StringType(), True),
+  StructField("LATITUDE", DoubleType(), True),
+  StructField("LONGITUDE", DoubleType(), True),
+  StructField("ELEMENT", StringType(), True),
+  StructField("FIRSTYEAR", IntegerType(), True),
+  StructField("LASTYEAR", IntegerType(), True)
+])

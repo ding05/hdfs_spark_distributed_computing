@@ -1,0 +1,10 @@
++----+--------------------+-----+
+|CODE|                NAME|COUNT|
++----+--------------------+-----+
+|  AC|Antigua and Barbuda |    2|
+|  AE|United Arab Emira...|    4|
+|  AF|         Afghanistan|    4|
+|  AG|            Algeria |   87|
+|  AJ|         Azerbaijan |   66|
++----+--------------------+-----+
+only showing top 5 rows

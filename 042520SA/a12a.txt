@@ -1,0 +1,21 @@
+# Similar steps conducted in Processing
+
+stations_countries = stations_joined_inventory.groupBy("COUNTRYCODE").count()
+
+stations_countries = stations_countries.withColumnRenamed("count", "COUNT")
+
+countries_joined = countries_parsed.join(stations_countries.selectExpr("COUNTRYCODE", "COUNT"), stations_countries.COUNTRYCODE == countries_parsed.CODE, how = "left")
+
+countries_joined = countries_joined.drop("COUNTRYCODE").sort("CODE")
+
+stations_states = stations_joined_inventory.groupBy("STATE").count()
+
+stations_states = stations_states.withColumnRenamed("count", "COUNT")
+
+states_joined = states_parsed.join(stations_states.selectExpr("STATE", "count as COUNT"), stations_states.STATE == states_parsed.CODE, how = "left")
+
+states_joined = states_joined.drop("STATE").sort("CODE")
+
+countries_joined.write.format("csv").mode("overwrite").option("header", "true").save("hdfs:///user/username/outputs/ghcnd/Countries.csv.gz")
+
+states_joined.write.format("csv").mode("overwrite").option("header", "true").save("hdfs:///user/username/outputs/ghcnd/States.csv.gz")

@@ -1,0 +1,143 @@
+from pyspark.sql.types import DoubleType
+
+inventory_parsed = inventory_parsed.withColumn("FIRSTYEAR", inventory_parsed["FIRSTYEAR"].cast(DoubleType()))
+
+inventory_parsed = inventory_parsed.withColumn("LASTYEAR", inventory_parsed["LASTYEAR"].cast(DoubleType()))
+
+# Group and compute the minimum.
+
+inventory_parsed.groupBy("ID").min("FIRSTYEAR").show(10)
+
++-----------+--------------+
+|         ID|min(FIRSTYEAR)|
++-----------+--------------+
+|ACW00011647|        1957.0|
+|AEM00041217|        1983.0|
+|AG000060590|        1892.0|
+|AGE00147706|        1893.0|
+|AGE00147708|        1879.0|
+|AGE00147709|        1879.0|
+|AGE00147710|        1909.0|
+|AGE00147711|        1880.0|
+|AGE00147714|        1896.0|
+|AGE00147719|        1888.0|
++-----------+--------------+
+only showing top 10 rows
+
+inventory_parsed.groupBy("ID").max("LASTYEAR").show(10)
+
++-----------+-------------+
+|         ID|max(LASTYEAR)|
++-----------+-------------+
+|ACW00011647|       1970.0|
+|AEM00041217|       2020.0|
+|AG000060590|       2020.0|
+|AGE00147706|       1920.0|
+|AGE00147708|       2020.0|
+|AGE00147709|       1938.0|
+|AGE00147710|       2009.0|
+|AGE00147711|       1938.0|
+|AGE00147714|       1938.0|
+|AGE00147719|       2020.0|
++-----------+-------------+
+only showing top 10 rows
+
+# Count distinct values.
+
+import pyspark.sql.functions as func
+
+inventory_parsed.groupBy(inventory_parsed.ID).agg(func.countDistinct("ELEMENT")).sort("ID").show(10)
+
++-----------+-----------------------+
+|         ID|count(DISTINCT ELEMENT)|
++-----------+-----------------------+
+|ACW00011604|                     11|
+|ACW00011647|                      7|
+|AE000041196|                      4|
+|AEM00041194|                      4|
+|AEM00041217|                      4|
+|AEM00041218|                      4|
+|AF000040930|                      5|
+|AFM00040938|                      5|
+|AFM00040948|                      5|
+|AFM00040990|                      5|
++-----------+-----------------------+
+only showing top 10 rows
+
+# Filter and count the core elements.
+
+inventory_parsed.filter((inventory_parsed.ELEMENT == "TMAX") | (inventory_parsed.ELEMENT == "TMIN") | (inventory_parsed.ELEMENT == "PRCP") | (inventory_parsed.ELEMENT == "SNOW") | (inventory_parsed.ELEMENT == "SNWD")).groupBy(inventory_parsed.ID).count().sort("ID").show(10)
+
++-----------+-----+
+|         ID|count|
++-----------+-----+
+|ACW00011604|    5|
+|ACW00011647|    5|
+|AE000041196|    3|
+|AEM00041194|    3|
+|AEM00041217|    3|
+|AEM00041218|    3|
+|AF000040930|    4|
+|AFM00040938|    4|
+|AFM00040948|    4|
+|AFM00040990|    4|
++-----------+-----+
+only showing top 10 rows
+
+inventory_parsed.filter((inventory_parsed.ELEMENT != "TMAX") & (inventory_parsed.ELEMENT != "TMIN") & (inventory_parsed.ELEMENT != "PRCP") & (inventory_parsed.ELEMENT != "SNOW") & (inventory_parsed.ELEMENT != "SNWD")).groupBy(inventory_parsed.ID).count().sort("ID").show(10)
+
++-----------+-----+
+|         ID|count|
++-----------+-----+
+|ACW00011604|    6|
+|ACW00011647|    2|
+|AE000041196|    1|
+|AEM00041194|    1|
+|AEM00041217|    1|
+|AEM00041218|    1|
+|AF000040930|    1|
+|AFM00040938|    1|
+|AFM00040948|    1|
+|AFM00040990|    1|
++-----------+-----+
+only showing top 10 rows
+
+inventory_core = inventory_parsed.filter((inventory_parsed.ELEMENT == "TMAX") | (inventory_parsed.ELEMENT == "TMIN") | (inventory_parsed.ELEMENT == "PRCP") | (inventory_parsed.ELEMENT == "SNOW") | (inventory_parsed.ELEMENT == "SNWD")).groupBy(inventory_parsed.ID).count().sort("ID")
+
+inventory_core = inventory_core.withColumn("count", inventory_core["count"].cast(DoubleType()))
+
+inventory_core.filter(inventory_core["count"] == 5).count()
+
+20266
+
+# Find temperature.
+
+inventory_parsed.filter((inventory_parsed.ELEMENT == "TMAX") | (inventory_parsed.ELEMENT == "TMIN")).groupBy(inventory_parsed.ID).count().count()
+
+40264
+
+inventory_parsed.filter((inventory_parsed.ELEMENT == "TMAX")).groupBy(inventory_parsed.ID).count().count()
+
+40120
+
+inventory_parsed.filter((inventory_parsed.ELEMENT == "TMIN")).groupBy(inventory_parsed.ID).count().count()
+
+40013
+
+# Find only temperature.
+
+inventory_temp = inventory_parsed.filter((inventory_parsed.ELEMENT == "TMAX") | (inventory_parsed.ELEMENT == "TMIN")).groupBy(inventory_parsed.ID).count()
+
+inventory_temp = inventory_temp.withColumnRenamed("count", "COUNT").withColumnRenamed("ID", "TEMPID")
+
+inventory_parsed_temp = inventory_parsed.join(inventory_temp, inventory_parsed.ID == inventory_temp.TEMPID, how = "left")
+
+inventory_parsed_temp_count = inventory_parsed_temp.groupBy("TEMPID").agg(func.countDistinct("ELEMENT"))
+
+inventory_parsed_temp_count = inventory_parsed_temp_count.withColumnRenamed("count(DISTINCT ELEMENT)", "COUNT")
+
+inventory_parsed_temp_count = inventory_parsed_temp_count.filter((inventory_parsed_temp_count.COUNT == 2) | (inventory_parsed_temp_count.COUNT == 1))
+
+inventory_parsed_temp_count.count()
+
+314

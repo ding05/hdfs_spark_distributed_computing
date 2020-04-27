@@ -1,0 +1,5 @@
+# Left join two tables.
+
+stations_joined = stations_parsed.join(countries_parsed.selectExpr("CODE", "NAME as COUNTRYNAME"), stations_parsed.COUNTRYCODE == countries_parsed.CODE, how = "left")
+
+stations_joined = stations_joined.drop("CODE")

@@ -1,0 +1,72 @@
+from pyspark.sql import functions as func
+
+# Test different amounts of years.
+
+years = [year for year in range(1763, 2021)]
+
+years = [1980, 2000, 2020]
+
+years = [2020]
+
+stations_joined = spark.read.load("hdfs:///user/username/outputs/ghcnd/Stations.csv.gz", format = "csv", header = "true").withColumnRenamed("ID", "STATIONID")
+
+# stations_joined.show(5)
+
+for year in years:
+  filepath = "hdfs:///data/ghcnd/daily/" + str(year) + ".csv.gz"
+  daily_year = spark.read.load(filepath, format = "csv", header = "false")
+  daily_year = daily_year.filter(daily_year._c2 == "PRCP")
+  daily_year_joined = daily_year.join(stations_joined.selectExpr("STATIONID", "COUNTRYCODE"), stations_joined.STATIONID == daily_year._c0, how = "left")
+  daily_year_joined = daily_year_joined.select("_c0", "_c1", "_c3", "COUNTRYCODE").withColumnRenamed("_c0", "ID").withColumnRenamed("_c1", "DATE").withColumnRenamed("_c3", "PRCPVALUE")
+  daily_year_joined_countries = daily_year_joined.groupBy("COUNTRYCODE").count().distinct()
+  daily_year_joined_values = daily_year_joined.groupBy("COUNTRYCODE").agg(func.sum("PRCPVALUE")).withColumnRenamed("COUNTRYCODE", "TEMP")
+  daily_year_joined_grouped = daily_year_joined_values.join(daily_year_joined_countries.selectExpr("COUNTRYCODE", "COUNT"), daily_year_joined_countries.COUNTRYCODE == daily_year_joined_values.TEMP, how = "left").drop("TEMP")
+  daily_year_joined_grouped = daily_year_joined_grouped.withColumn("AVGPRCP", (func.col("sum(PRCPVALUE)") / func.col("COUNT")))
+  daily_year_PRCP = daily_year_joined_grouped.drop("sum(PRCPVALUE)").drop("COUNT").sort("COUNTRYCODE")
+  daily_year_PRCP.write.format("csv").mode("overwrite").option("header", "true").save("hdfs:///user/username/outputs/ghcnd/prcp/" + str(year) + ".csv.gz")
+  print("hdfs:///user/username/outputs/ghcnd/prcp/" + str(year) + ".csv.gz generated")
+
+# daily_year_joined.show(5)
+
+# daily_year_joined_values.show(5)
+
+daily_year_joined_countries.show(5)
+
++-----------+-------+
+|COUNTRYCODE|  count|
++-----------+-------+
+|         US|1092936|
+|         SP|   4488|
+|         FR|   4683|
+|         RS|  34629|
+|         NZ|    730|
++-----------+-------+
+only showing top 5 rows
+
+daily_year_joined_values.show(5)
+
++----+--------------+
+|TEMP|sum(PRCPVALUE)|
++----+--------------+
+|  US|   3.1846248E7|
+|  SP|       67111.0|
+|  FR|       95450.0|
+|  RS|      376267.0|
+|  NZ|       11407.0|
++----+--------------+
+only showing top 5 rows
+
+daily_year_PRCP.show(5)
+
++-----------+-----------------+
+|COUNTRYCODE|          AVGPRCP|
++-----------+-----------------+
+|         AE|           27.675|
+|         AF|81.51219512195122|
+|         AG|           5.8165|
+|         AJ|76.15860215053763|
+|         AM|51.83221476510067|
++-----------+-----------------+
+only showing top 5 rows
+
+[username@canterbury.ac.nz@mathmadslinux1p ~]$ hdfs dfs -copyToLocal /user/username/outputs/ghcnd/prcp/ /users/home/username/

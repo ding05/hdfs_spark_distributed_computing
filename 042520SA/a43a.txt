@@ -1,0 +1,56 @@
+years = []
+
+for i in range(2016, 2021):
+  years.append(i)
+
+tmins = []
+stations = []
+
+for year in years:
+  filepath = "hdfs:///data/ghcnd/daily/" + str(year) + ".csv.gz"
+  daily_year = spark.read.load(filepath, format = "csv", header = "false")
+  daily_year_tmax = daily_year.filter(daily_year._c2 == "TMAX")
+  daily_year_tmax = daily_year_tmax.select("_c0", "_c1", "_c3").withColumnRenamed("_c0", "TMAXID").withColumnRenamed("_c1", "TMAXDATE").withColumnRenamed("_c3", "TMAX")
+  daily_year_tmin = daily_year.filter(daily_year._c2 == "TMIN")
+  daily_year_tmin = daily_year_tmin.select("_c0", "_c1", "_c3").withColumnRenamed("_c0", "TMINID").withColumnRenamed("_c1", "TMINDATE").withColumnRenamed("_c3", "TMIN")
+  daily_year_both = daily_year_tmax.join(daily_year_tmin, (daily_year_tmax.TMAXID == daily_year_tmin.TMINID) & (daily_year_tmax.TMAXDATE == daily_year_tmin.TMINDATE), how = "full")
+  daily_year_tmin_notmax = daily_year_both.filter(daily_year_both.TMIN.isNotNull()).filter(daily_year_both.TMAX.isNull()).drop("TMAXID").drop("TMAXDATE").withColumnRenamed("TMINID", "ID").withColumnRenamed("TMINDATE", "DATE")
+  tmins.append([year, daily_year_tmin_notmax.count()])
+  stations.append([year, daily_year_tmin_notmax.select("ID").distinct().count()])
+  print("Year " + str(year) + " appended")
+
+daily_years_tmins = spark.createDataFrame(tmins)
+
+daily_years_tmins = daily_years_tmins.withColumnRenamed("_1", "YEAR").withColumnRenamed("_2", "count(TMINWITHOUTTMAX)")
+
+daily_years_tmins.write.format("csv").mode("overwrite").option("header", "true").save("hdfs:///user/username/outputs/ghcnd/Daily TMIN Without TMAX Counts.csv")
+
+spark.read.load("hdfs:///user/username/outputs/ghcnd/Daily TMIN Without TMAX Counts.csv", format = "csv", header = "true").sort("YEAR").show()
+
+daily_years_tmins.sort("YEAR", ascending = False).show(5)
+
++----+----------------------+
+|YEAR|count(TMINWITHOUTTMAX)|
++----+----------------------+
+|2020|                 42436|
+|2019|                236248|
+|2018|                221178|
+|2017|                222990|
+|2016|                203148|
++----+----------------------+
+
+daily_years_stations_tminwithouttmax = spark.createDataFrame(stations)
+
+daily_years_stations_tminwithouttmax = daily_years_stations_tminwithouttmax.withColumnRenamed("_1", "YEAR").withColumnRenamed("_2", "count(STATION)")
+
+daily_years_stations_tminwithouttmax.sort("YEAR", ascending = False).show(5)
+
++----+--------------+
+|YEAR|count(STATION)|
++----+--------------+
+|2020|          3822|
+|2019|          4625|
+|2018|          5394|
+|2017|          5316|
+|2016|          5345|
++----+--------------+

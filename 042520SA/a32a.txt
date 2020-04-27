@@ -1,0 +1,7 @@
+daily_2015 = spark.read.load("hdfs:///data/ghcnd/daily/2015.csv.gz", format = "csv", header = "false")
+
+daily_2015.count()
+
+daily_2020 = spark.read.load("hdfs:///data/ghcnd/daily/2020.csv.gz", format = "csv", header = "false")
+
+daily_2020.count()

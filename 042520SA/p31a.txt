@@ -1,0 +1,3 @@
+# Get the first two characters.
+
+stations_parsed = stations_parsed.withColumn("COUNTRYCODE", stations_parsed.ID.substr(1, 2))

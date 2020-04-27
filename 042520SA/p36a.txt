@@ -1,0 +1,62 @@
+# Join two metadata tables.
+
+stations_joined_2020 = stations_joined_inventory.join(daily_2020_1000.selectExpr("ID", "DATE", "ELEMENT as DAILYELEMENT", "VALUE", "MEASUREMENTFLAG", "QUALITYFLAG", "SOURCEFLAG", "OBSERVATIONTIME"), stations_joined_inventory.ID == daily_2020_1000.ID, how = "left").drop(daily_2020_1000.ID).sort("ID")
+
+stations_joined_2020.show()
+
++-----------+--------+---------+---------+-----+--------------------+--------+------------+------+-----------+--------------------+---------+------------+-----------+--------------------+----------------+-------------------+--------+------------+-----+---------------+-----------+----------+---------------+
+|         ID|LATITUDE|LONGITUDE|ELEVATION|STATE|                NAME|GSN FLAG|HCN/CRN FLAG|WMO ID|COUNTRYCODE|         COUNTRYNAME|STATENAME|MINFIRSTYEAR|MAXLASTYEAR|COUNTDISTINCTELEMENT|COUNTCOREELEMENT|COUNTNONCOREELEMENT|    DATE|DAILYELEMENT|VALUE|MEASUREMENTFLAG|QUALITYFLAG|SOURCEFLAG|OBSERVATIONTIME|
++-----------+--------+---------+---------+-----+--------------------+--------+------------+------+-----------+--------------------+---------+------------+-----------+--------------------+----------------+-------------------+--------+------------+-----+---------------+-----------+----------+---------------+
+|ACW00011604| 17.1167| -61.7833|     10.1|     |ST JOHNS COOLIDGE...|        |            |      |         AC|Antigua and Barbuda |     null|        1949|       1949|                  11|               5|                  6|    null|        null| null|           null|       null|      null|           null|
+|ACW00011647| 17.1333| -61.7833|     19.2|     |ST JOHNS         ...|        |            |      |         AC|Antigua and Barbuda |     null|        1957|       1970|                   7|               5|                  2|    null|        null| null|           null|       null|      null|           null|
+|AE000041196| 25.3330|  55.5170|     34.0|     |SHARJAH INTER. AI...|     GSN|            | 41196|         AE|United Arab Emira...|     null|        1944|       2020|                   4|               3|                  1|20200107|        PRCP|    0|              D|       null|         S|           null|
+|AE000041196| 25.3330|  55.5170|     34.0|     |SHARJAH INTER. AI...|     GSN|            | 41196|         AE|United Arab Emira...|     null|        1944|       2020|                   4|               3|                  1|20200104|        PRCP|    0|              D|       null|         S|           null|
+|AE000041196| 25.3330|  55.5170|     34.0|     |SHARJAH INTER. AI...|     GSN|            | 41196|         AE|United Arab Emira...|     null|        1944|       2020|                   4|               3|                  1|20200107|        TMIN|  115|           null|       null|         S|           null|
+|AE000041196| 25.3330|  55.5170|     34.0|     |SHARJAH INTER. AI...|     GSN|            | 41196|         AE|United Arab Emira...|     null|        1944|       2020|                   4|               3|                  1|20200102|        TAVG|  214|              H|       null|         S|           null|
+|AE000041196| 25.3330|  55.5170|     34.0|     |SHARJAH INTER. AI...|     GSN|            | 41196|         AE|United Arab Emira...|     null|        1944|       2020|                   4|               3|                  1|20200104|        TMIN|  149|           null|       null|         S|           null|
+|AE000041196| 25.3330|  55.5170|     34.0|     |SHARJAH INTER. AI...|     GSN|            | 41196|         AE|United Arab Emira...|     null|        1944|       2020|                   4|               3|                  1|20200105|        PRCP|    0|              D|       null|         S|           null|
+|AE000041196| 25.3330|  55.5170|     34.0|     |SHARJAH INTER. AI...|     GSN|            | 41196|         AE|United Arab Emira...|     null|        1944|       2020|                   4|               3|                  1|20200106|        TAVG|  207|              H|       null|         S|           null|
+|AE000041196| 25.3330|  55.5170|     34.0|     |SHARJAH INTER. AI...|     GSN|            | 41196|         AE|United Arab Emira...|     null|        1944|       2020|                   4|               3|                  1|20200101|        TMIN|  168|           null|       null|         S|           null|
+|AE000041196| 25.3330|  55.5170|     34.0|     |SHARJAH INTER. AI...|     GSN|            | 41196|         AE|United Arab Emira...|     null|        1944|       2020|                   4|               3|                  1|20200102|        PRCP|    0|              D|       null|         S|           null|
+|AE000041196| 25.3330|  55.5170|     34.0|     |SHARJAH INTER. AI...|     GSN|            | 41196|         AE|United Arab Emira...|     null|        1944|       2020|                   4|               3|                  1|20200103|        PRCP|    0|              D|       null|         S|           null|
+|AE000041196| 25.3330|  55.5170|     34.0|     |SHARJAH INTER. AI...|     GSN|            | 41196|         AE|United Arab Emira...|     null|        1944|       2020|                   4|               3|                  1|20200103|        TAVG|  212|              H|       null|         S|           null|
+|AE000041196| 25.3330|  55.5170|     34.0|     |SHARJAH INTER. AI...|     GSN|            | 41196|         AE|United Arab Emira...|     null|        1944|       2020|                   4|               3|                  1|20200104|        TAVG|  219|              H|       null|         S|           null|
+|AE000041196| 25.3330|  55.5170|     34.0|     |SHARJAH INTER. AI...|     GSN|            | 41196|         AE|United Arab Emira...|     null|        1944|       2020|                   4|               3|                  1|20200105|        TMIN|  165|           null|       null|         S|           null|
+|AE000041196| 25.3330|  55.5170|     34.0|     |SHARJAH INTER. AI...|     GSN|            | 41196|         AE|United Arab Emira...|     null|        1944|       2020|                   4|               3|                  1|20200105|        TAVG|  237|              H|       null|         S|           null|
+|AE000041196| 25.3330|  55.5170|     34.0|     |SHARJAH INTER. AI...|     GSN|            | 41196|         AE|United Arab Emira...|     null|        1944|       2020|                   4|               3|                  1|20200106|        PRCP|    5|              D|       null|         S|           null|
+|AE000041196| 25.3330|  55.5170|     34.0|     |SHARJAH INTER. AI...|     GSN|            | 41196|         AE|United Arab Emira...|     null|        1944|       2020|                   4|               3|                  1|20200101|        PRCP|    0|              D|       null|         S|           null|
+|AE000041196| 25.3330|  55.5170|     34.0|     |SHARJAH INTER. AI...|     GSN|            | 41196|         AE|United Arab Emira...|     null|        1944|       2020|                   4|               3|                  1|20200101|        TAVG|  211|              H|       null|         S|           null|
+|AE000041196| 25.3330|  55.5170|     34.0|     |SHARJAH INTER. AI...|     GSN|            | 41196|         AE|United Arab Emira...|     null|        1944|       2020|                   4|               3|                  1|20200103|        TMIN|  154|           null|       null|         S|           null|
++-----------+--------+---------+---------+-----+--------------------+--------+------------+------+-----------+--------------------+---------+------------+-----------+--------------------+----------------+-------------------+--------+------------+-----+---------------+-----------+----------+---------------+
+only showing top 20 rows
+
+The size of the metatable.
+The amounts of columns and rows.
+The time of processing joining steps.
+The time of visually showing the metatable. (20s)
+
+daily_2020_1000_ID = daily_2020_1000.selectExpr("ID").sort("ID")
+
+stations_joined_inventory_ID = stations_joined_inventory.selectExpr("ID").sort("ID")
+
+daily_2020_1000_ID.show()
+
+stations_joined_inventory_ID.show()
+
+stations_joined_inventory_ID.subtract(daily_2020_1000_ID).sort("ID").show(10)
+
++-----------+
+|         ID|
++-----------+
+|ACW00011604|
+|ACW00011647|
+|AF000040930|
+|AG000060680|
+|AGE00135039|
+|AGE00147704|
+|AGE00147705|
+|AGE00147706|
+|AGE00147707|
+|AGE00147709|
++-----------+
+only showing top 10 rows
