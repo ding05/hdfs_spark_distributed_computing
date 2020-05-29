@@ -1,0 +1,60 @@
+# Filter out Null.
+
+features_1_labeled = features_1_labeled.where(col("GENRE").isNotNull())
+
+# Change the values in GENRE.
+
+# "Rap" -> "R"; others -> "N"
+
+from pyspark.sql.functions import when, lit
+
+features_1_labeled = features_1_labeled.withColumn("GENRE", when(features_1_labeled.GENRE == "Rap", lit("1")).otherwise("0"))
+
+features_1_labeled.groupBy("GENRE").count().show()
+
+# Undersampling
+
+from pyspark.sql.functions import rand
+
+temp = features_1_labeled.filter(features_1_labeled.GENRE == "0")
+
+temp_1 = temp.orderBy(rand()).limit(20899)
+
+# Get the final dataset.
+
+features = features_1_labeled.filter(features_1_labeled.GENRE == "1")
+
+features = features.union(temp_1)
+
+features.groupBy("GENRE").count().show()
+
++-----+-----+
+|GENRE|count|
++-----+-----+
+|    0|20899|
+|    1|20899|
++-----+-----+
+
+features = features.select([c for c in features.columns if c in ["_c0","_c1","_c4", "_c6", "_c9", "TRACK_ID", "GENRE"]])
+
+features = features.select(col("_c0").alias("F1"), col("_c1").alias("F2"), col("_c4").alias("F5"), col("_c6").alias("F7"), col("_c9").alias("F10"), col("TRACK_ID"), col("GENRE"))
+
+from pyspark.sql.types import DoubleType, IntegerType
+
+features = features.withColumn("F1", features["F1"].cast(DoubleType()))
+
+features = features.withColumn("F2", features["F2"].cast(DoubleType()))
+
+features = features.withColumn("F5", features["F5"].cast(DoubleType()))
+
+features = features.withColumn("F7", features["F7"].cast(DoubleType()))
+
+features = features.withColumn("F10", features["F10"].cast(DoubleType()))
+
+features = features.withColumn("GENRE", features["GENRE"].cast(IntegerType()))
+
+# Split 80% as training, 20% as test and 0% as validation.
+
+data = features.randomSplit([0.8, 0.2])
+
+# data[0] = training; data[1] = test

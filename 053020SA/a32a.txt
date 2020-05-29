@@ -1,0 +1,48 @@
+# Tune the logistic regression.
+
+data = features_tran.randomSplit([0.8, 0.2], 1)
+
+from pyspark.ml.classification import LogisticRegression
+
+lr = LogisticRegression(labelCol = "GENRE", featuresCol = "scaled_features")
+
+from pyspark.ml.tuning import ParamGridBuilder, CrossValidator
+
+paramGrid = ParamGridBuilder()\
+    .addGrid(lr.aggregationDepth,[2, 10])\
+    .addGrid(lr.elasticNetParam,[0.0, 1.0])\
+    .addGrid(lr.maxIter,[10, 100])\
+    .addGrid(lr.regParam,[0.01, 0.5]) \
+    .build()
+
+from pyspark.ml.evaluation import BinaryClassificationEvaluator
+
+evaluator = BinaryClassificationEvaluator(rawPredictionCol = "rawPrediction", labelCol = "GENRE")
+
+cv = CrossValidator(estimator = lr, estimatorParamMaps = paramGrid, evaluator = evaluator, numFolds = 5)
+
+cv_lr_mod = cv.fit(data[0])
+
+predict_train = cv_lr_mod.transform(data[0])
+
+predict_test = cv_lr_mod.transform(data[1])
+
+predict_test.select("GENRE", "prediction").show(100)
+
+from pyspark.ml.evaluation import BinaryClassificationEvaluator
+
+evaluator = BinaryClassificationEvaluator(rawPredictionCol = "rawPrediction", labelCol = "GENRE")
+
+print("The area under ROC for train set is {}".format(evaluator.evaluate(predict_train)))
+
+print("The area under ROC for test set is {}".format(evaluator.evaluate(predict_test)))
+
+y_true = predict_test.select(["GENRE"]).collect()
+
+y_pred = predict_test.select(["prediction"]).collect()
+
+from sklearn.metrics import classification_report, confusion_matrix
+
+print(classification_report(y_true, y_pred))
+
+print(confusion_matrix(y_true, y_pred))

@@ -1,0 +1,16 @@
+# Check unique users and songs.
+
+triplets_parsed = triplets.select(
+    triplets.value.substr(1, 40).alias("USER"),
+    triplets.value.substr(42, 18).alias("SONG_ID"),
+    triplets.value.substr(61, 3).alias("CHOICE"))
+
+triplets_removed = triplets_parsed.join(mismatches_parsed, "SONG_ID", "left_anti")
+
+taste = triplets_removed
+
+taste.groupBy("USER").count().count()
+# 1019318
+
+taste.groupBy("SONG_ID").count().count()
+# 378309

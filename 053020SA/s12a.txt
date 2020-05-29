@@ -1,0 +1,12 @@
+# Find the most active user.
+
+taste.groupBy("USER").count().sort("count", ascending = False).show(truncate = False)
+
+# ec6dfcf19485cb011e0b22637075037aae34cf26
+
+# Find the songs that this user plays.
+
+active = taste.filter(taste.USER == "ec6dfcf19485cb011e0b22637075037aae34cf26").select("USER", "SONG_ID", "CHOICE")
+
+active.groupBy("SONG_ID").count().count()
+# 4316

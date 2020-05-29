@@ -1,0 +1,25 @@
++--------------+-----+
+|         GENRE|LABEL|
++--------------+-----+
+|        Stage |    0|
+|         Vocal|    1|
+|     Religious|    2|
+|Easy_Listening|    3|
+|          Jazz|    4|
+|    Electronic|    5|
+|         Blues|    6|
+| International|    7|
+|      Children|    8|
+|           Rap|    9|
+|           RnB|   10|
+|   Avant_Garde|   11|
+|         Latin|   12|
+|          Folk|   13|
+|      Pop_Rock|   14|
+|       New Age|   15|
+|     Classical|   16|
+|       Country|   17|
+| Comedy_Spoken|   18|
+|        Reggae|   19|
+|       Holiday|   20|
++--------------+-----+

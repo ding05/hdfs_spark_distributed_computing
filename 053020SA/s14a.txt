@@ -1,0 +1,53 @@
+# Get the top songs and users based on their distributions.
+
+sum_song_top = sum_song.limit(7566)
+
+sum_user_top = sum_user.limit(20386)
+
+sum_song_top = sum_song_top.withColumnRenamed("SONG_ID", "TOP_SONG_ID")
+
+sum_user_top = sum_user_top.withColumnRenamed("USER", "TOP_USER")
+
+taste_top = taste.join(sum_song_top.selectExpr("TOP_SONG_ID"), taste.SONG_ID == sum_song_top.TOP_SONG_ID, how = "left")
+
+taste_top = taste_top.join(sum_user_top.selectExpr("TOP_USER"), taste_top.USER == sum_user_top.TOP_USER, how = "left")
+
+taste_top = taste_top.na.drop()
+
+taste_top = taste_top.drop("TOP_SONG_ID").drop("TOP_USER")
+
+taste.count()
+# 45795100
+
+taste_top.count()
+# 1853992
+
+# Encode song ids and users into integers.
+
+from operator import itemgetter
+
+from pyspark.sql.types import IntegerType
+
+indexer = (taste_top.select("SONG_ID").distinct()
+    .rdd.map(itemgetter(0)).zipWithIndex()
+    .toDF(["SONG_ID", "LABEL"]))
+
+taste_top = taste_top.join(indexer, ["SONG_ID"], how = "left")
+
+taste_top = taste_top.drop("SONG_ID")
+
+taste_top = taste_top.withColumnRenamed("LABEL", "SONG_ID")
+
+taste_top = taste_top.withColumn("SONG_ID", taste_top["SONG_ID"].cast(IntegerType()))
+
+indexer = (taste_top.select("USER").distinct()
+    .rdd.map(itemgetter(0)).zipWithIndex()
+    .toDF(["USER", "LABEL"]))
+
+taste_top = taste_top.join(indexer, ["USER"], how = "left")
+
+taste_top = taste_top.drop("USER")
+
+taste_top = taste_top.withColumnRenamed("LABEL", "USER")
+
+taste_top = taste_top.withColumn("USER", taste_top["USER"].cast(IntegerType()))

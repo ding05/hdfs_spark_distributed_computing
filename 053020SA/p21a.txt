@@ -1,0 +1,29 @@
+mismatches = spark.read.text("hdfs:///data/msd/tasteprofile/mismatches")
+
+triplets = spark.read.text("hdfs:///data/msd/tasteprofile/triplets.tsv")
+
+metadata = spark.read.load("hdfs:///data/msd/main/summary/metadata.csv.gz", format = "csv", header = "true")
+
+# Parsing the fixed text.
+
+mismatches_parsed = mismatches.select(
+    mismatches.value.substr(9, 18).alias("SONG_ID"),
+    mismatches.value.substr(28, 18).alias("TRACK_ID"))
+
+mismatches_parsed.show(5, truncate = False)
+
+triplets_parsed = triplets.select(
+    triplets.value.substr(42, 18).alias("SONG_ID"),
+    triplets.value.substr(61, 3).alias("CHOICE"))
+
+triplets_parsed.show(5, truncate = False)
+
+# Remove the rows with values that are in mismathces_parsed.
+
+triplets_removed = triplets_parsed.join(mismatches_parsed, "SONG_ID", "left_anti")
+
+triplets_parsed.count()
+# 48373586
+
+triplets_removed.count()
+# 45795100

@@ -1,0 +1,129 @@
+# Python and pyspark modules required
+
+import sys
+
+from pyspark import SparkContext
+
+from pyspark.sql import SparkSession
+
+from pyspark.sql.types import *
+
+from pyspark.sql.functions import *
+
+from pyspark.sql.window import Window
+
+from pyspark.ml.recommendation import ALS
+
+from pyspark.ml.evaluation import RegressionEvaluator
+
+from pyspark.mllib.evaluation import RankingMetrics
+
+import numpy as np
+
+from pyspark.ml.evaluation import RegressionEvaluator
+
+from pyspark.mllib.evaluation import RankingMetrics
+
+predictions = model.transform(taste_test)
+
+evaluator = RegressionEvaluator(metricName = "rmse", labelCol = "CHOICE", predictionCol = "prediction")
+
+evaluator.evaluate(predictions.filter(col("prediction") != np.NaN))
+14.483992251295703
+
+# Ranking metrics (not used)
+
+# Precision at 5
+
+from pyspark.sql import functions as F
+
+k = 5
+
+windowSpec = Window.partitionBy("USER").orderBy(col("prediction").desc())
+
+perUserPredictedItemsDF = predictions.select("USER", "SONG_ID", "prediction", F.rank().over(windowSpec).alias("rank")).where("rank <= {0}".format(k)).groupBy("USER").agg(expr("collect_list(SONG_ID) as songs"))
+
+windowSpec = Window.partitionBy("USER").orderBy(col("CHOICE").desc())
+
+perUserActualItemsDF = predictions.select("USER", "SONG_ID", "CHOICE", F.rank().over(windowSpec).alias("rank")).where("rank <= {0}".format(k)).groupBy("USER").agg(expr("collect_list(SONG_ID) as songs"))
+
+perUserItemsRDD = perUserPredictedItemsDF.join(F.broadcast(perUserActualItemsDF), "USER", "inner").rdd.map(lambda row: (row[1], row[2]))
+
+perUserItemsRDD.isEmpty()
+
+rankingMetrics = RankingMetrics(perUserItemsRDD)
+
+precisionAtK = rankingMetrics.precisionAt(k)
+
+print(precisionAtK)
+# 0.514090341901672
+
+# NDCG at 10
+
+k = 10
+
+windowSpec = Window.partitionBy("USER").orderBy(col("prediction").desc())
+
+perUserPredictedItemsDF = predictions.select("USER", "SONG_ID", "prediction", F.rank().over(windowSpec).alias("rank")).where("rank <= {0}".format(k)).groupBy("USER").agg(expr("collect_list(SONG_ID) as songs"))
+
+windowSpec = Window.partitionBy("USER").orderBy(col("CHOICE").desc())
+
+perUserActualItemsDF = predictions.select("USER", "SONG_ID", "CHOICE", F.rank().over(windowSpec).alias("rank")).where("rank <= {0}".format(k)).groupBy("USER").agg(expr("collect_list(SONG_ID) as songs"))
+
+perUserItemsRDD = perUserPredictedItemsDF.join(F.broadcast(perUserActualItemsDF), "USER", "inner").rdd.map(lambda row: (row[1], row[2]))
+
+rankingMetrics = RankingMetrics(perUserItemsRDD)
+
+k = 5
+
+precisionAtK = rankingMetrics.precisionAt(k)
+
+print(precisionAtK)
+# 0.744560982918789
+
+k = 10
+
+ndcgAtK = rankingMetrics.ndcgAt(k)
+
+print(ndcgAtK)
+# 0.7840258896797282
+
+# MAP
+
+meanAveragePrecision = rankingMetrics.meanAveragePrecision
+
+print(meanAveragePrecision)
+# 0.6205460999378045
+
+# Ranking metrics (used)
+
+k = 3
+
+windowSpec = Window.partitionBy("USER").orderBy(col("prediction").desc())
+
+perUserPredictedItemsDF = predictions.select("USER", "SONG_ID", "prediction", F.rank().over(windowSpec).alias("rank")).where("rank <= {0}".format(k)).groupBy("USER").agg(expr("collect_list(SONG_ID) as songs"))
+
+windowSpec = Window.partitionBy("USER").orderBy(col("CHOICE").desc())
+
+perUserActualItemsDF = predictions.select("USER", "SONG_ID", "CHOICE", F.rank().over(windowSpec).alias("rank")).where("rank <= {0}".format(k)).groupBy("USER").agg(expr("collect_list(SONG_ID) as songs"))
+
+perUserItemsRDD = perUserPredictedItemsDF.join(F.broadcast(perUserActualItemsDF), "USER", "inner").rdd.map(lambda row: (row[1], row[2]))
+
+perUserItemsRDD.isEmpty()
+
+rankingMetrics = RankingMetrics(perUserItemsRDD)
+
+precisionAtK = rankingMetrics.precisionAt(5)
+
+print(precisionAtK)
+# 0.20402201100550282
+
+ndcgAtK = rankingMetrics.ndcgAt(10)
+
+print(ndcgAtK)
+# 0.3354279259275898
+
+meanAveragePrecision = rankingMetrics.meanAveragePrecision
+
+print(meanAveragePrecision)
+# 0.2621156861730782

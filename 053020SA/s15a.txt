@@ -1,0 +1,66 @@
+# Split 80% as training, 20% as test and 0% as validation.
+
+data = taste_top.randomSplit([0.8, 0.2], 1)
+
+# data[0] = training; data[1] = test
+
+taste_train = data[0]
+
+taste_test = data[1]
+
+# taste_train.count()
+# 1483715
+
+# taste_test.count()
+# 370230
+
+taste_top.groupBy("USER").count().count()
+# 20373
+
+taste_train.groupBy("SONG_ID").count().count()
+# 7566
+
+taste_train.groupBy("USER").count().count()
+# 20370
+
+taste_test.groupBy("SONG_ID").count().count()
+# 7564
+
+taste_test.groupBy("USER").count().count()
+# 20189
+
+# Clean the training set.
+
+taste_test_temp = data[1].groupBy("USER").count()
+
+taste_test_temp = taste_test_temp.withColumnRenamed("USER", "TEMP")
+
+taste_train = taste_train.join(taste_test_temp.selectExpr("TEMP"), taste_train.USER == taste_test_temp.TEMP, how = "left")
+
+taste_train = taste_train.na.drop()
+
+taste_train.count()
+# 1482762
+
+taste_train.groupBy("USER").count().count()
+# 20199
+
+taste_train = taste_train.drop("TEMP")
+
+# Clean the test set.
+
+taste_train_temp = data[0].groupBy("USER").count()
+
+taste_train_temp = taste_train_temp.withColumnRenamed("USER", "TEMP")
+
+taste_test = taste_test.join(taste_train_temp.selectExpr("TEMP"), taste_test.USER == taste_train_temp.TEMP, how = "left")
+
+taste_test = taste_test.na.drop()
+
+taste_test.count()
+# 370225
+
+taste_test.groupBy("USER").count().count()
+# 20191
+
+taste_test = taste_test.drop("TEMP")

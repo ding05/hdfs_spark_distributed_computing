@@ -1,0 +1,3 @@
+# Load a small dataset.
+
+features_1 = spark.read.load("hdfs:///data/msd/audio/features/msd-jmir-methods-of-moments-all-v1.0.csv", format = "csv", header = "false")

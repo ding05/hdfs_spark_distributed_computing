@@ -1,0 +1,205 @@
+# Combine features in one feature vector.
+
+cols = features.columns
+
+cols.remove("TRACK_ID")
+
+cols.remove("GENRE")
+
+from pyspark.ml.feature import VectorAssembler
+
+assembler = VectorAssembler(inputCols = cols, outputCol = "features")
+
+features_tran = assembler.transform(features)
+
+features_tran.select("features").show(truncate = False)
+
+# Standard scalrizer
+
+from pyspark.ml.feature import StandardScaler
+
+standardscaler = StandardScaler().setInputCol("features").setOutputCol("scaled_features")
+
+features_tran = standardscaler.fit(features_tran).transform(features_tran)
+
+features_tran.select("features", "scaled_features").show(5, truncate = False)
+
+# Split the data.
+
+data = features_tran.randomSplit([0.8, 0.2])
+
+# Logistic regression
+
+from pyspark.ml.classification import LogisticRegression
+
+lr = LogisticRegression(labelCol = "GENRE", featuresCol = "scaled_features", maxIter = 10)
+
+lr_mod = lr.fit(data[0])
+
+predict_train = lr_mod.transform(data[0])
+
+predict_test = lr_mod.transform(data[1])
+
+predict_test.select("GENRE", "prediction").show(100)
+
+# ROC evaluation
+
+from pyspark.ml.evaluation import BinaryClassificationEvaluator
+
+evaluator = BinaryClassificationEvaluator(rawPredictionCol = "rawPrediction", labelCol = "GENRE")
+
+predict_test.select("GENRE", "rawPrediction", "prediction", "probability").show(5)
+
+print("The area under ROC for train set is {}".format(evaluator.evaluate(predict_train)))
+
+# The area under ROC for train set is 0.8456738945643012
+
+print("The area under ROC for test set is {}".format(evaluator.evaluate(predict_test)))
+
+# The area under ROC for test set is 0.8484490930703085
+
+# Metrics evalution
+
+y_true = predict_test.select(["GENRE"]).collect()
+
+y_pred = predict_test.select(["prediction"]).collect()
+
+from sklearn.metrics import classification_report, confusion_matrix
+
+print(classification_report(y_true, y_pred))
+
+print(confusion_matrix(y_true, y_pred))
+
+              precision    recall  f1-score   support
+
+           0       0.79      0.77      0.78      4166
+           1       0.78      0.80      0.79      4229
+
+   micro avg       0.78      0.78      0.78      8395
+   macro avg       0.78      0.78      0.78      8395
+weighted avg       0.78      0.78      0.78      8395
+
+[[3204  962]
+ [ 850 3379]]
+
+# Support vector machine
+
+from pyspark.ml.classification import LinearSVC
+
+svm = LinearSVC(labelCol = "GENRE", featuresCol = "scaled_features", maxIter = 10, regParam = 0.1)
+
+svm_mod = svm.fit(data[0])
+
+predict_train = svm_mod.transform(data[0])
+
+predict_test = svm_mod.transform(data[1])
+
+predict_test.select("GENRE", "prediction").show(100)
+
+# ROC evaluation
+
+from pyspark.ml.evaluation import BinaryClassificationEvaluator
+
+evaluator = BinaryClassificationEvaluator(rawPredictionCol = "rawPrediction", labelCol = "GENRE")
+
+# predict_test.select("GENRE", "rawPrediction", "prediction", "probability").show(5)
+
+print("The area under ROC for train set is {}".format(evaluator.evaluate(predict_train)))
+
+# The area under ROC for train set is 0.7958225094358404
+
+print("The area under ROC for test set is {}".format(evaluator.evaluate(predict_test)))
+
+# The area under ROC for test set is 0.7971288364284419
+
+# Metrics evalution
+
+y_true = predict_test.select(["GENRE"]).collect()
+
+y_pred = predict_test.select(["prediction"]).collect()
+
+from sklearn.metrics import classification_report, confusion_matrix
+
+print(classification_report(y_true, y_pred))
+
+print(confusion_matrix(y_true, y_pred))
+
+              precision    recall  f1-score   support
+
+           0       0.89      0.41      0.56      4166
+           1       0.62      0.95      0.75      4229
+
+   micro avg       0.68      0.68      0.68      8395
+   macro avg       0.75      0.68      0.66      8395
+weighted avg       0.75      0.68      0.66      8395
+
+[[1708 2458]
+ [ 212 4017]]
+
+# Random forest
+
+from pyspark.ml import Pipeline
+
+from pyspark.ml.classification import RandomForestClassifier
+
+from pyspark.ml.feature import IndexToString, StringIndexer, VectorIndexer
+
+from pyspark.ml.evaluation import MulticlassClassificationEvaluator
+
+rf = RandomForestClassifier(labelCol = "GENRE", featuresCol = "scaled_features", numTrees = 10)
+
+labelIndexer = StringIndexer(inputCol = "GENRE", outputCol = "indexedGENRE").fit(features)
+
+# featureIndexer = VectorIndexer(inputCol = "scaled_features", outputCol = "indexedscaled_features", maxCategories = 4).fit(features)
+
+labelConverter = IndexToString(inputCol = "prediction", outputCol = "predictedLabel", labels=labelIndexer.labels)
+
+pipeline = Pipeline(stages=[rf, labelConverter])
+
+rf_mod = pipeline.fit(data[0])
+
+predict_train = rf_mod.transform(data[0])
+
+predict_test = rf_mod.transform(data[1])
+
+predict_test.select("GENRE", "prediction").show(100)
+
+# ROC evaluation
+
+from pyspark.ml.evaluation import BinaryClassificationEvaluator
+
+evaluator = BinaryClassificationEvaluator(rawPredictionCol = "rawPrediction", labelCol = "GENRE")
+
+# predict_test.select("GENRE", "rawPrediction", "prediction", "probability").show(5)
+
+print("The area under ROC for train set is {}".format(evaluator.evaluate(predict_train)))
+
+# The area under ROC for train set is 0.8555722447813072
+
+print("The area under ROC for test set is {}".format(evaluator.evaluate(predict_test)))
+
+# The area under ROC for test set is 0.8532319817659357
+
+# Metrics evalution
+
+y_true = predict_test.select(["GENRE"]).collect()
+
+y_pred = predict_test.select(["prediction"]).collect()
+
+from sklearn.metrics import classification_report, confusion_matrix
+
+print(classification_report(y_true, y_pred))
+
+print(confusion_matrix(y_true, y_pred))
+
+              precision    recall  f1-score   support
+
+           0       0.80      0.76      0.78      4166
+           1       0.77      0.82      0.79      4229
+
+   micro avg       0.79      0.79      0.79      8395
+   macro avg       0.79      0.79      0.79      8395
+weighted avg       0.79      0.79      0.79      8395
+
+[[3151 1015]
+ [ 778 3451]]

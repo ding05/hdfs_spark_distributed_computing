@@ -1,0 +1,13 @@
+# Wrangle the audio dataset.
+
+from pyspark.sql.functions import substring, length, col, expr
+
+features_1 = features_1.withColumn("_c10", expr("substring(_c10, 2, length(_c10) - 2)"))
+
+features_1_labeled = features_1.join(genre_MAGD_parsed.selectExpr("TRACK_ID", "GENRE"), features_1._c10 == genre_MAGD_parsed.TRACK_ID, how = "left")
+
+features_1_labeled = features_1_labeled.drop("TRACK_ID")
+
+features_1_labeled = features_1_labeled.withColumnRenamed("_c10", "TRACK_ID")
+
+features_1_labeled.select([c for c in features_1_labeled.columns if c in ["_c8", "_c9", "TRACK_ID", "GENRE"]]).show(5)

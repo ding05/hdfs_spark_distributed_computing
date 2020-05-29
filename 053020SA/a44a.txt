@@ -1,0 +1,65 @@
+data = features_all_tran.randomSplit([0.8, 0.2], 1)
+
+# Random forests
+
+from pyspark.ml import Pipeline
+
+from pyspark.ml.classification import RandomForestClassifier
+
+from pyspark.ml.feature import IndexToString, StringIndexer, VectorIndexer
+
+from pyspark.ml.evaluation import MulticlassClassificationEvaluator
+
+rf = RandomForestClassifier(labelCol = "GENRE", featuresCol = "scaled_features", numTrees = 50)
+
+labelIndexer = StringIndexer(inputCol = "GENRE", outputCol = "indexedGENRE").fit(features)
+
+labelConverter = IndexToString(inputCol = "prediction", outputCol = "predictedLabel", labels=labelIndexer.labels)
+
+pipeline = Pipeline(stages=[rf, labelConverter])
+
+rf_mod = pipeline.fit(data[0])
+
+predict_train = rf_mod.transform(data[0])
+
+predict_test = rf_mod.transform(data[1])
+
+predict_test.select("GENRE", "prediction").show(100)
+
+predict_test.groupBy("prediction").count().show()
+
+# ROC evaluation
+
+from pyspark.ml.evaluation import BinaryClassificationEvaluator
+
+evaluator = BinaryClassificationEvaluator(rawPredictionCol = "rawPrediction", labelCol = "GENRE")
+
+# predict_test.select("GENRE", "rawPrediction", "prediction", "probability").show(5)
+
+print("The area under ROC for train set is {}".format(evaluator.evaluate(predict_train)))
+
+# The area under ROC for train set is 0.20306466514227622
+
+print("The area under ROC for test set is {}".format(evaluator.evaluate(predict_test)))
+
+# The area under ROC for test set is 0.20850450908738558
+
+# Metrics evalution
+
+y_true = predict_test.select(["GENRE"]).collect()
+
+y_pred = predict_test.select(["prediction"]).collect()
+
+from sklearn.metrics import classification_report, confusion_matrix
+
+print(classification_report(y_true, y_pred))
+
+print(confusion_matrix(y_true, y_pred))
+
+results = sc.parallelize(y_true, y_pred)
+
+from pyspark.sql.functions import col
+ 
+temp = predict_test.select(((col("GENRE") - col("prediction"))).alias("diff"))
+
+temp.groupBy("diff").count().show(100)

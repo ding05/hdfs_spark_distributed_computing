@@ -1,0 +1,13 @@
+# Wrangle the genre table.
+
+genre_MAGD = spark.read.text("hdfs:///data/msd/genre/msd-MAGD-genreAssignment.tsv")
+
+genre_MAGD.show(500, truncate = False)
+
+genre_MAGD_parsed = genre_MAGD.select(
+    genre_MAGD.value.substr(1, 18).alias("TRACK_ID"),
+    genre_MAGD.value.substr(20, 16).alias("GENRE"))
+
+genre_MAGD_parsed.show(truncate = False)
+
+genre_MAGD_parsed.groupBy("GENRE").count().distinct().show()

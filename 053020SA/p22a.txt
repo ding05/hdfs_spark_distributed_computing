@@ -1,0 +1,25 @@
+attributes = spark.read.load("hdfs:///data/msd/audio/attributes", format = "csv", header = "false")
+
+attributes = attributes.withColumnRenamed("_c0", "VARIABLE").withColumnRenamed("_c1", "TYPE")
+
+from pyspark.sql.functions import when
+
+from pyspark.sql.types import *
+
+# Wrangle the strings.
+
+attributes_renamed = attributes.withColumn("TYPE", when(attributes["TYPE"] == "STRING", "StringType()").otherwise(attributes["TYPE"]))
+
+attributes_renamed = attributes_renamed.withColumn("TYPE", when(attributes_renamed["TYPE"] == "string", "StringType()").otherwise(attributes_renamed["TYPE"]))
+
+attributes_renamed = attributes_renamed.withColumn("TYPE", when(attributes_renamed["TYPE"] == "NUMERIC", "DoubleType()").otherwise(attributes_renamed["TYPE"]))
+
+attributes_renamed = attributes_renamed.withColumn("TYPE", when(attributes_renamed["TYPE"] == "real", "DoubleType()").otherwise(attributes_renamed["TYPE"]))
+
+attributes_renamed.groupBy("TYPE").count().distinct().show()
+
+# Build a schema using the type column.
+
+attributes_schema = StructType([
+    StructField(VARIABLE, eval(TYPE), True) for (VARIABLE, TYPE) in  attributes_renamed.rdd.collect()
+])

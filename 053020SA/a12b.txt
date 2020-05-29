@@ -1,0 +1,10 @@
++--------------+------+
+|         GENRE| count|
++--------------+------+
+|          Folk|  5865|
+|         Blues|  6836|
+| International| 14242|
+|        Stage |  1614|
+|      Children|   477|
++--------------+------+
+only showing top 5 rows

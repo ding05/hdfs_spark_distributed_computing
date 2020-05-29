@@ -1,0 +1,10 @@
++------------------+------+
+|SONG_ID           |CHOICE|
++------------------+------+
+|SOQEFDN12AB017C52B|1     |
+|SOQOIUJ12A6701DAA7|2     |
+|SOQOKKD12A6701F92E|4     |
+|SOSDVHO12AB01882C7|1     |
+|SOSKICX12A6701F932|1     |
++------------------+------+
+only showing top 5 rows

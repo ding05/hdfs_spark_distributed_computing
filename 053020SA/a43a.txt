@@ -1,0 +1,61 @@
+features_2 = features_1.join(genre_MAGD_parsed.selectExpr("TRACK_ID", "GENRE"), features_1._c10 == genre_MAGD_parsed.TRACK_ID, how = "left")
+
+features_2 = features_2.drop("TRACK_ID")
+
+features_2 = features_2.where(col("GENRE").isNotNull())
+
+features_all = features_2.select(col("_c0").alias("F1"), col("_c1").alias("F2"), col("_c4").alias("F5"), col("_c6").alias("F7"), col("_c9").alias("F10"), col("GENRE"))
+
+# Encode genres into integers.
+
+from operator import itemgetter
+
+indexer = (features_all.select("GENRE").distinct()
+    .rdd.map(itemgetter(0)).zipWithIndex()
+    .toDF(["GENRE", "LABEL"]))
+
+features_all = features_all.join(indexer, ["GENRE"], how = "left")
+
+features_all = features_all.drop("GENRE")
+
+features_all = features_all.withColumnRenamed("LABEL", "GENRE")
+
+# Change the column types.
+
+from pyspark.sql.types import DoubleType, IntegerType
+
+features_all = features_all.withColumn("F1", features_all["F1"].cast(DoubleType()))
+
+features_all = features_all.withColumn("F2", features_all["F2"].cast(DoubleType()))
+
+features_all = features_all.withColumn("F5", features_all["F5"].cast(DoubleType()))
+
+features_all = features_all.withColumn("F7", features_all["F7"].cast(DoubleType()))
+
+features_all = features_all.withColumn("F10", features_all["F10"].cast(DoubleType()))
+
+features_all = features_all.withColumn("GENRE", features_all["GENRE"].cast(IntegerType()))
+
+# Combine features in one feature vector.
+
+cols = features_all.columns
+
+cols.remove("GENRE")
+
+from pyspark.ml.feature import VectorAssembler
+
+assembler = VectorAssembler(inputCols = cols, outputCol = "features")
+
+features_tran = assembler.transform(features_all)
+
+features_tran.select("features").show(truncate = False)
+
+# Standard scalrizer
+
+from pyspark.ml.feature import StandardScaler
+
+standardscaler = StandardScaler().setInputCol("features").setOutputCol("scaled_features")
+
+features_tran = standardscaler.fit(features_tran).transform(features_tran)
+
+features_tran.select("features", "scaled_features").show(5, truncate = False)

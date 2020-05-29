@@ -1,0 +1,19 @@
+# Get the song and user distributions and write them into two csv files for plotting with R.
+
+from pyspark.sql.types import IntegerType
+
+taste = taste.withColumn("CHOICE", taste["CHOICE"].cast(IntegerType()))
+
+sum_song = taste.groupBy("SONG_ID").sum("CHOICE").sort("sum(CHOICE)", ascending = False)
+
+sum_user = taste.groupBy("USER").sum("CHOICE").sort("sum(CHOICE)", ascending = False)
+
+sum_song.write.format("csv").mode("overwrite").option("header", "true").save("hdfs:///user/dni25/outputs/msd/sum_song.csv.gz")
+
+sum_user.write.format("csv").mode("overwrite").option("header", "true").save("hdfs:///user/dni25/outputs/msd/sum_user.csv.gz")
+
+sum_user.repartition(1).write.format("csv").option("header", "true").save("hdfs:///user/dni25/outputs/msd/sum_user.csv")
+
+[dni25@canterbury.ac.nz@mathmadslinux1p ~]$ hdfs dfs -du /user/dni25/outputs/msd/
+
+[dni25@canterbury.ac.nz@mathmadslinux1p ~]$ hdfs dfs -copyToLocal /user/dni25/outputs/msd/ /users/home/dni25/
